@@ -3,7 +3,7 @@
 
 AIRFLOW_HOME_CMD = AIRFLOW_HOME=$(PWD)/airflow
 
-.PHONY: init dags db seed scheduler webserver ui stop clean demo
+.PHONY: init dags db seed scheduler webserver ui stop clean demo new-task
 
 ## Airflow DB 초기화 + 관리자 계정 (admin/admin)
 init:
@@ -58,6 +58,11 @@ research-task:
 research-local:
 	python research/failure_prediction/experiment_runner.py
 	@echo "실험 결과: research/failure_prediction/results/run_*/metrics.json"
+
+## 새 연구 태스크 생성 (스캐폴드)
+##   make new-task TASK=maintenance_cost DATASET=lab_sensor_data TARGET=failure NOTE="설명"
+new-task:
+	python scripts/new_task.py $(TASK) --dataset $(DATASET) --target $(TARGET) --note "$(NOTE)"
 
 ## inbox에 있는 새 데이터 확인 + 등록
 inbox:

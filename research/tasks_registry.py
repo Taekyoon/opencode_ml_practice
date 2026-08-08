@@ -10,6 +10,7 @@
 DAG(ml_research_loop)는 이 레지스트리를 읽어 task별로 실험을 실행한다.
 """
 
+import json
 import os
 from dataclasses import dataclass
 
@@ -18,6 +19,9 @@ RESEARCH_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(RESEARCH_DIR)
 
 DEFAULT_TASK = "failure_prediction"
+
+# 스캐폴드(scripts/new_task.py)로 추가된 task 저장 파일
+EXTRA_TASKS_FILE = os.path.join(RESEARCH_DIR, "tasks_extra.json")
 
 
 @dataclass
@@ -69,6 +73,48 @@ def list_tasks() -> list[str]:
 
 def get_all_tasks() -> list[ExperimentTask]:
     return [TASKS[t] for t in list_tasks()]
+
+
+def register_task(task: ExperimentTask, persist: bool = True) -> ExperimentTask:
+    """새 task를 런타임에 등록한다. persist=True면 tasks_extra.json에 저장해 재기동에도 유지.
+
+    스캐폴드(scripts/new_task.py)에서 호출된다.
+    """
+    if persist:
+        extra = {}
+        if os.path.exists(EXTRA_TASKS_FILE):
+            with open(EXTRA_TASKS_FILE, encoding="utf-8") as f:
+                extra = json.load(f)
+        extra[task.id] = {
+            "id": task.id,
+            "kind": task.kind,
+            "score_name": task.score_name,
+            "runner": task.runner,
+            "program": task.program,
+            "results_dir": task.results_dir,
+            "description": task.description,
+        }
+        with open(EXTRA_TASKS_FILE, "w", encoding="utf-8") as f:
+            json.dump(extra, f, indent=2, ensure_ascii=False)
+    TASKS[task.id] = task
+    return task
+
+
+# 스캐폴드로 추가된 외부 task 로드 (tasks_extra.json)
+def _load_extra_tasks():
+    if not os.path.exists(EXTRA_TASKS_FILE):
+        return
+    try:
+        with open(EXTRA_TASKS_FILE, encoding="utf-8") as f:
+            extra = json.load(f)
+        for tid, spec in extra.items():
+            if tid not in TASKS:
+                TASKS[tid] = ExperimentTask(**spec)
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+
+_load_extra_tasks()
 
 
 if __name__ == "__main__":
