@@ -37,7 +37,7 @@ make research-report
 cat research/reports/report_failure_prediction_*.md
 ```
 - `score` · 개선 여부가 담긴 리포트
-- `research/db`에 기록되고 `wiki/tasks/failure_prediction.md`에 새 run이 추가된다
+- `research/research.db`에 기록되고 `wiki/tasks/failure_prediction.md`에 새 run이 추가된다
 
 ### 3단계: 위키 반영 확인
 ```bash
