@@ -43,7 +43,7 @@ Python 3.12.4
 
 ### 2단계: 프로젝트 폴더로 이동
 ```bash
-cd ~/semiconductor_failure_prediction
+cd ~/opencode_ml_practice
 ```
 > `cd`는 "change directory"(폴더 이동)의 약자다.
 > `ls`를 입력하면 폴더 안에 무엇이 있는지 볼 수 있다.

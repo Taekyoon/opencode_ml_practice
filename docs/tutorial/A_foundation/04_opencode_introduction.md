@@ -34,7 +34,7 @@ AGENTS.md는 opencode에게 **"이 프로젝트의 규칙"**을 알려주는 문
 
 ### 1단계: opencode 실행
 ```bash
-cd ~/semiconductor_failure_prediction
+cd ~/opencode_ml_practice
 opencode
 ```
 대화가 시작된다. (종료는 `/exit`)

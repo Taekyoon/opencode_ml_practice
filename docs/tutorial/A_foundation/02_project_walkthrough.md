@@ -8,7 +8,7 @@
 ## 프로젝트 구조
 
 ```
-semiconductor_failure_prediction/
+opencode_ml_practice/
 ├── README.md                     # 프로젝트 소개
 ├── Makefile                      # 운영 명령 모음 (make로 실행)
 ├── AGENTS.md                     # AI 에이전트용 작업 가이드
@@ -77,7 +77,7 @@ semiconductor_failure_prediction/
 
 ### 1단계: 실제 구조 확인
 ```bash
-cd ~/semiconductor_failure_prediction
+cd ~/opencode_ml_practice
 ls
 ```
 

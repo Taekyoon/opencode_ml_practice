@@ -2,10 +2,12 @@
 
 반도체 실험실 공정/측정 수치 데이터에서 제품 failure 여부를 예측하는 로지스틱 회귀 분류 모델입니다.
 
+> 저장소: [`Taekyoon/opencode_ml_practice`](https://github.com/Taekyoon/opencode_ml_practice)
+
 ## 프로젝트 구조
 
 ```
-semiconductor_failure_prediction/
+opencode_ml_practice/
 ├── data/
 │   └── synthetic_data.csv      # 가상 반도체 공정 데이터 (5,000행)
 ├── plots/

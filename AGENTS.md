@@ -12,7 +12,7 @@
 ## 2. 디렉터리 구조
 
 ```
-semiconductor_failure_prediction/
+opencode_ml_practice/
 ├── scripts/new_task.py          # 새 연구 태스크 자동 생성 (스캐폴드 CLI)
 ├── research/
 │   ├── tasks_registry.py        # 태스크 레지스트리 (빌트인) + tasks_extra.json 로드

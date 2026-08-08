@@ -55,7 +55,7 @@ Phase 5: 운영 체계 완성 (1주+)
 
 **구조 변화:**
 ```
-semiconductor_failure_prediction/
+opencode_ml_practice/
 ├── src/
 │   ├── __init__.py          # 신규
 │   ├── main.py              # 신규 (CLI 진입점)
