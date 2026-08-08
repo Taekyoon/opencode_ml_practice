@@ -1,11 +1,11 @@
-"""자율 ML 연구를 위한 단일 실험 파이프라인.
+"""자율 ML 연구를 위한 단일 실험 파이프라인 (failure_prediction 태스크).
 
 이 파일은 `ml-researcher` 에이전트가 수정하는 **단일 파일**이다.
 전처리, 특성 공학, 모델, 불균형 대응을 모두 담당하며,
 `src/` 아래 고정 모듈을 import하여 데이터 생성/기본 유틸리티를 재사용한다.
 
-실행: python experiment_runner.py
-출력: research/results/run_<run_id>/{config.json, metrics.json, runner_snapshot.py}
+실행: python research/failure_prediction/experiment_runner.py
+출력: research/failure_prediction/results/run_<run_id>/{metrics.json, runner_snapshot.py}
 """
 
 import copy
@@ -18,9 +18,12 @@ from datetime import datetime
 import numpy as np
 
 # 프로젝트 루트를 sys.path에 추가 (Airflow에서 실행 시에도 안전)
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+TASK_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+
+RESULTS_DIR = os.path.join(TASK_DIR, "results")
 
 from src.data_generation import generate_synthetic_data
 from src.preprocessing import add_synthetic_missing, fill_missing, scale_features
@@ -46,8 +49,25 @@ def get_config() -> dict:
 # [에이전트 수정 영역] - run_experiment() 내부 로직을 자유롭게 변경한다.
 # ============================================================================
 def _load_data(config: dict):
-    """데이터 생성 → 결측 주입 → 처리 → (X, y) 반환."""
+    """데이터 로드 → 결측 주입 → 처리 → (X, y) 반환.
+
+    - config['dataset'] 지정 시: src.data_manager 로 등록된 데이터셋 사용
+    - 미지정: 가상 데이터 생성 (기본)
+    """
     seed = config.get("seed", 42)
+
+    dataset = config.get("dataset")
+    if dataset:
+        from src.data_manager import load_dataset
+
+        X, y = load_dataset(dataset)
+        X = X.copy()
+        if y is not None:
+            y = y.astype(int)
+        if config.get("scale", True):
+            X, _ = scale_features(X)
+        print(f"[runner] dataset '{dataset}' 사용: {X.shape}")
+        return X, y
 
     df = generate_synthetic_data(n_samples=config["n_samples"], seed=seed)
     df = add_synthetic_missing(df, missing_rate=config.get("missing_rate", 0.05), seed=seed)
@@ -162,10 +182,10 @@ def run_experiment(config: dict = None) -> dict:
 
 
 def _run_and_save(run_dir: str = None) -> dict:
-    """실험 실행 + 파일 저장 (research/results/run_<id>)."""
+    """실험 실행 + 파일 저장 (research/<task>/results/run_<id>)."""
     if run_dir is None:
         run_id = "run_" + datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_dir = os.path.join(PROJECT_ROOT, "research", "results", run_id)
+        run_dir = os.path.join(RESULTS_DIR, run_id)
     os.makedirs(run_dir, exist_ok=True)
 
     result = run_experiment()

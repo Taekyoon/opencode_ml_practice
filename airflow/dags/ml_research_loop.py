@@ -1,12 +1,12 @@
-"""매일 밤 자율 ML 연구 루프 DAG.
+"""매일 밤 자율 ML 연구 루프 DAG (다중 태스크).
 
-1. prepare_data   — (준비 완료 단계, 실험 데이터 예산 확인용)
-2. run_experiment — experiment_runner.py 실행 (에이전트가 수정한 단일 파일)
-3. evaluate_store — 결과 평가 + SQLite 기록 + best_model 갱신
-4. report         — 일일 리포트 생성
+research/tasks_registry.py 의 등록된 task를 모두 읽어 task별로 실험을 수행한다.
 
-에이전트(ml-researcher)는 연구 지침서(research_program.md)에 따라
-experiment_runner.py 를 수정한 뒤 이 DAG를 트리거한다.
+- conf 미지정: 등록된 모든 task 실행 (매일 스케줄)
+- conf 지정:      airflow dags trigger ml_research_loop -c '{"task": "quality_regression"}' \
+                  해당 task만 실행, 나머지는 skip
+
+task 흐름: prepare_data → run_experiment → evaluate_store → generate_report
 """
 
 import json
@@ -16,14 +16,16 @@ import sys
 from datetime import datetime
 
 from airflow import DAG
+from airflow.exceptions import AirflowSkipException
 from airflow.operators.python import PythonOperator
 
-# 프로젝트 루트
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+sys.path.insert(0, os.path.join(PROJECT_ROOT, "research"))
 
-RUN_DIR = os.path.join(PROJECT_ROOT, "research", "results")
+from tasks_registry import get_task, list_tasks
+
 REPORT_DIR = os.path.join(PROJECT_ROOT, "research", "reports")
 
 DEFAULT_ARGS = {
@@ -34,113 +36,130 @@ DEFAULT_ARGS = {
 }
 
 
-def _prepare_data(**context):
-    """사용할 실험 데이터 소스 확인. (이미 src/ 로 고정됨)"""
-    from src.data_generation import generate_synthetic_data
+def _selected_tasks(conf: dict) -> list:
+    """conf['task'] 또는 conf['tasks']로 선택된 task 리스트. 미지정 시 전체."""
+    if not conf:
+        return list_tasks()
+    raw = conf.get("tasks") or conf.get("task")
+    if not raw:
+        return list_tasks()
+    if isinstance(raw, str):
+        raw = [raw]
+    return [get_task(t).id for t in raw]
 
-    df = generate_synthetic_data(n_samples=5000, seed=42)
-    context["task_instance"].xcom_push(
-        key="data_summary",
-        value={"rows": len(df), "failure_rate": float(df["failure"].mean())},
-    )
-    return {"data_ready": True, "rows": len(df)}
+
+def _guard(task_id: str, context: dict):
+    """conf 로 선택된 task 가 아니면 이 task 를 skip 한다."""
+    conf = (context.get("dag_run") or {}).conf if context.get("dag_run") else None
+    requested = _selected_tasks(conf)
+    if requested and task_id not in requested:
+        raise AirflowSkipException(f"{task_id}: 이번 실행 대상이 아님 (conf={conf})")
 
 
-def _run_experiment(**context):
-    """experiment_runner.py 를 subprocess로 실행하여 결과 JSON을 반환."""
-    runner = os.path.join(PROJECT_ROOT, "experiment_runner.py")
-    python = sys.executable
+def _prepare_data(task_id: str, **context):
+    """데이터 준비 확인 (데이터 생성은 src/ 고정, 무상태 체크)."""
+    _guard(task_id, context)
+    return {"task_id": task_id, "data_ready": True}
 
-    import tempfile
-    out_tmp = tempfile.mktemp(suffix=".json", prefix="exp_", dir="/tmp")
 
-    # runner가 stdout으로 JSON 출력하도록, 하위 프로세스에서 임시 run_dir 사용
+def _run_experiment(task_id: str, **context):
+    """task별 experiment_runner.py 를 subprocess 로 실행한다."""
+    _guard(task_id, context)
+    task = get_task(task_id)
+    runner = os.path.join(PROJECT_ROOT, task.runner)
+    results_dir = os.path.join(PROJECT_ROOT, task.results_dir)
+
     proc = subprocess.run(
-        [python, runner],
+        [sys.executable, runner],
         capture_output=True,
         text=True,
         cwd=PROJECT_ROOT,
-        timeout=300,  # 5분 예산
+        timeout=300,
     )
     if proc.returncode != 0:
-        raise RuntimeError(f"experiment_runner.py 실패:\n{proc.stdout}\n{proc.stderr}")
+        raise RuntimeError(f"{task_id} runner 실패:\n{proc.stdout}\n{proc.stderr}")
 
-    # metrics.json 을 최신 run_*/ 폴더에서 찾는다
     run_dirs = sorted(
-        (d for d in os.listdir(RUN_DIR) if d.startswith("run_") and os.path.isdir(os.path.join(RUN_DIR, d))),
+        (
+            d
+            for d in os.listdir(results_dir)
+            if d.startswith("run_") and os.path.isdir(os.path.join(results_dir, d))
+        ),
         reverse=True,
     )
     if not run_dirs:
-        raise FileNotFoundError("실험 결과 폴더가 없습니다.")
+        raise FileNotFoundError(f"{task_id}: 실험 결과 폴더가 없습니다.")
 
-    latest = os.path.join(RUN_DIR, run_dirs[0], "metrics.json")
+    latest = os.path.join(results_dir, run_dirs[0], "metrics.json")
     with open(latest, encoding="utf-8") as f:
         result = json.load(f)
-
     result["run_id"] = os.path.basename(run_dirs[0])
-    context["task_instance"].xcom_push(key="run_result", value=result)
 
-    # runner 스냅샷 저장 (재현성)
     snap_src = ""
-    snap_path = os.path.join(RUN_DIR, run_dirs[0], "runner_snapshot.py")
+    snap_path = os.path.join(results_dir, run_dirs[0], "runner_snapshot.py")
     if os.path.exists(snap_path):
         with open(snap_path, encoding="utf-8") as f:
             snap_src = f.read()
 
+    context["task_instance"].xcom_push(key="run_result", value=result)
     context["task_instance"].xcom_push(key="runner_snapshot", value=snap_src)
     return result
 
 
-def _evaluate_store(**context):
-    """결과를 SQLite에 기록하고 best_model 을 갱신한다."""
+def _evaluate_store(task_id: str, **context):
+    """결과를 SQLite 에 기록하고 task 별 best 갱신."""
+    _guard(task_id, context)
     ti = context["task_instance"]
-    result = ti.xcom_pull(task_ids="run_experiment", key="run_result")
-    snap_src = ti.xcom_pull(task_ids="run_experiment", key="runner_snapshot")
+    result = ti.xcom_pull(task_ids=f"{task_id}_run", key="run_result")
+    snap_src = ti.xcom_pull(task_ids=f"{task_id}_run", key="runner_snapshot")
+    task = get_task(task_id)
 
     from src.research_store import get_best_score, record_experiment
 
-    run_id = result.get("run_id")
-    score = result["score"]
-    metrics = result["metrics"]
-    config = result["config"]
-
-    prev_best = get_best_score()
+    prev_best = get_best_score(task_id)
     record_experiment(
-        run_id=run_id,
-        config=config,
-        metrics=metrics,
-        score=score,
+        run_id=result["run_id"],
+        config=result["config"],
+        metrics=result["metrics"],
+        score=result["score"],
+        task_id=task_id,
+        score_name=task.score_name,
         runner_snapshot=snap_src,
     )
-    new_best = get_best_score()
+    new_best = get_best_score(task_id)
 
     return {
-        "run_id": run_id,
-        "score": score,
+        "task_id": task_id,
+        "run_id": result["run_id"],
+        "score": result["score"],
         "prev_best": prev_best,
         "new_best": new_best,
-        "improved": new_best is not None and (prev_best is None or new_best > prev_best),
+        "improved": new_best is not None and prev_best is not None and new_best > prev_best,
     }
 
 
-def _generate_report(**context):
-    """일일 연구 리포트를 생성한다 (markdown)."""
+def _generate_report(task_id: str, **context):
+    """task별 일일 리포트 생성."""
+    _guard(task_id, context)
     from src.research_store import get_all_experiments
 
     ti = context["task_instance"]
-    eval_info = ti.xcom_pull(task_ids="evaluate_store")
+    eval_info = ti.xcom_pull(task_ids=f"{task_id}_eval")
+    task = get_task(task_id)
 
     os.makedirs(REPORT_DIR, exist_ok=True)
     date_str = datetime.now().strftime("%Y-%m-%d")
-    report_path = os.path.join(REPORT_DIR, f"report_{date_str}.md")
+    report_path = os.path.join(REPORT_DIR, f"report_{task_id}_{date_str}.md")
 
-    records = get_all_experiments(limit=20)
+    records = get_all_experiments(task_id=task_id, limit=20)
     lines = [
-        f"# ML 자율 연구 리포트 ({date_str})",
+        f"# ML 자율 연구 리포트 — {task_id} ({date_str})",
+        "",
+        f"## 태스크: {task.description}",
         "",
         "## 오늘의 실험",
-        f"- 실행한 실험: {eval_info['run_id']}",
-        f"- score: {eval_info['score']} (이전 최고: {eval_info['prev_best']}, 현재 최고: {eval_info['new_best']})",
+        f"- 실행: `{eval_info['run_id']}`",
+        f"- score: {eval_info['score']} (이전 최고: {eval_info['prev_best']}, 현재: {eval_info['new_best']})",
         f"- 개선 여부: {'개선됨' if eval_info.get('improved') else '미개선'}",
         "",
         "## 최근 실험 기록",
@@ -148,42 +167,49 @@ def _generate_report(**context):
     ]
     for r in records:
         lines.append(
-            f"- `{r['run_id']}` score={r['score']} F1={r.get('f1')} PR-AUC={r.get('pr_auc')} is_best={'★' if r.get('is_best') else ''}"
+            f"- `{r['run_id']}` score={r['score']} "
+            f"(F1={r.get('f1')}, PR-AUC={r.get('pr_auc')}, R2={r.get('r2')}) "
+            f"{'★' if r.get('is_best') else ''}"
         )
     lines.append("")
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
-    print(f"[report] 생성됨: {report_path}")
+    print(f"[report:{task_id}] 생성됨: {report_path}")
     return {"report_path": report_path}
 
 
 with DAG(
     dag_id="ml_research_loop",
     default_args=DEFAULT_ARGS,
-    schedule_interval="0 0 * * *",  # 매일 밤(UTC 기준) 0시
+    schedule_interval="0 0 * * *",  # 매일 밤 00:00 (UTC)
     start_date=datetime(2026, 8, 1),
     catchup=False,
     tags=["semiconductor", "research", "ml-researcher"],
-    description="자율 ML 연구 루프: experiment_runner.py 실행 → 평가 → 기록 → 리포트",
+    description="자율 ML 연구 루프 (다중 태스크): runner 실행 → 평가 → 기록 → 리포트",
 ) as dag:
 
-    t_prepare = PythonOperator(
-        task_id="prepare_data",
-        python_callable=_prepare_data,
-    )
-    t_run = PythonOperator(
-        task_id="run_experiment",
-        python_callable=_run_experiment,
-    )
-    t_eval = PythonOperator(
-        task_id="evaluate_store",
-        python_callable=_evaluate_store,
-    )
-    t_report = PythonOperator(
-        task_id="generate_report",
-        python_callable=_generate_report,
-    )
-
-    t_prepare >> t_run >> t_eval >> t_report
+    for task_id in list_tasks():
+        t_prepare = PythonOperator(
+            task_id=f"{task_id}_prepare",
+            python_callable=_prepare_data,
+            op_kwargs={"task_id": task_id},
+            provide_context=True,
+        )
+        t_run = PythonOperator(
+            task_id=f"{task_id}_run",
+            python_callable=_run_experiment,
+            op_kwargs={"task_id": task_id},
+        )
+        t_eval = PythonOperator(
+            task_id=f"{task_id}_eval",
+            python_callable=_evaluate_store,
+            op_kwargs={"task_id": task_id},
+        )
+        t_report = PythonOperator(
+            task_id=f"{task_id}_report",
+            python_callable=_generate_report,
+            op_kwargs={"task_id": task_id},
+        )
+        t_prepare >> t_run >> t_eval >> t_report

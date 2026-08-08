@@ -23,9 +23,12 @@ logs/
 experiments/results/
 experiments/summary.json
 mlruns/
-research/results/
+research/**/results/
+research/**/reports/
+research/**/best_model/
 research/research.db
-research/reports/
+research/inbox/
+research/datasets/
 
 # Airflow (데모 운영 산출물)
 airflow/airflow.db

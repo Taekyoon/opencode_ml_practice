@@ -50,10 +50,22 @@ experiments-local:
 research:
 	$(AIRFLOW_HOME_CMD) airflow dags trigger ml_research_loop
 
-## 자율 연구 루프를 로컬에서 직접 실행 (Airflow 없이, 검증용)
+## 특정 task만 자율 연구 루프 실행 (TASK=failure_prediction quality_regression)
+research-task:
+	$(AIRFLOW_HOME_CMD) airflow dags trigger ml_research_loop -c '{"task": "$(TASK)"}'
+
+## 자율 연구 루프를 로컬에서 직접 실행 (Airflow 없이, task별 runner)
 research-local:
-	python experiment_runner.py
-	@echo "실험 결과: cat research/results/run_*/metrics.json"
+	python research/failure_prediction/experiment_runner.py
+	@echo "실험 결과: research/failure_prediction/results/run_*/metrics.json"
+
+## inbox에 있는 새 데이터 확인 + 등록
+inbox:
+	python -m src.data_manager
+
+## inbox 데이터 등록 (FILE=파일명)
+inbox-register:
+	python -c "from src.data_manager import register_file; print(register_file('$(FILE)'))"
 
 ## 연구 실험 기록 확인
 research-log:
