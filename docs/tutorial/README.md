@@ -86,6 +86,20 @@ cd opencode_ml_practice
 
 ---
 
+## 실습 모델
+
+이 튜토리얼은 opencode의 다음 모델로 실습·검증했습니다.
+
+| 항목 | 값 |
+|------|-----|
+| 모델 | **`opencode/deepseek-v4-flash-free`** |
+| 모드 | opencode 기본 대화 모드 (main 에이전트) |
+| 비고 | 다른 모델로 실습해도 됩니다. 단, 레슨 예시와 결과 수치가 미세하게 다를 수 있습니다. |
+
+> 모델 변경 방법: opencode 세션에서 `/models` 명령을 쓰거나, 프로젝트 `opencode.json`의 `model` 필드로 고정할 수 있습니다.
+
+---
+
 ## 학습 방식 (이 튜토리얼의 진행법)
 
 각 레슨은 opencode와 함께 진행됩니다.
