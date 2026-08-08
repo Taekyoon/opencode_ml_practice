@@ -14,11 +14,36 @@ import json
 import os
 from dataclasses import dataclass
 
+import numpy as np
+
 # 이 파일 위치: <루트>/research/tasks_registry.py
 RESEARCH_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(RESEARCH_DIR)
 
 DEFAULT_TASK = "failure_prediction"
+
+# 클래스 후보 개수 판정 임계값: 이 값 이하가 되면 분류로 간주
+KIND_CLASSIFY_MAX_CLASSES = 20
+
+
+def infer_kind(values) -> str:
+    """target 값의 유형으로 classification / regression 을 단일 판정한다.
+
+    스캐폴더(scripts/new_task.py)와 생성된 runner 템플릿이 동일한 기준을 쓰도록
+    한 곳에 두었다. 판정 규칙:
+    - 비수치(non-numeric 존재) → classification
+    - 수치: 고유값 개수가 KIND_CLASSIFY_MAX_CLASSES 이하 → classification, 초과 → regression
+    """
+    import pandas as pd
+
+    series = pd.Series(values).dropna()
+    if series.empty:
+        return "classification"
+    if series.dtype.kind in "if":
+        uniq = series.nunique()
+        return "classification" if uniq <= KIND_CLASSIFY_MAX_CLASSES else "regression"
+    return "classification"
+
 
 # 스캐폴드(scripts/new_task.py)로 추가된 task 저장 파일
 EXTRA_TASKS_FILE = os.path.join(RESEARCH_DIR, "tasks_extra.json")

@@ -63,13 +63,14 @@ def _build_model(model_type: str, params: dict):
 
 
 def run_experiment(config: dict = None) -> dict:
-    """실험 실행 → {"config", "metrics", "score"} 반환."""
+    """실험 실행 → {"config", "metrics", "score", "kind"} 반환."""
     from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
     from sklearn.model_selection import train_test_split
 
     if config is None:
         config = copy.deepcopy(get_config())
 
+    seed = config.get("seed", 42)
     t0 = time.time()
 
     # 1. 데이터
@@ -82,7 +83,7 @@ def run_experiment(config: dict = None) -> dict:
             raise ValueError(f"dataset '{dataset}' 에 target 컬럼이 없습니다.")
         df = X.join(y)
     else:
-        df = generate_synthetic_data(n_samples=config["n_samples"], seed=42)
+        df = generate_synthetic_data(n_samples=config["n_samples"], seed=seed)
 
     target = config.get("target_col", config.get("target", "thickness"))
     exclude = config.get("features_cols_exclude", ["failure"])
@@ -91,14 +92,16 @@ def run_experiment(config: dict = None) -> dict:
     y = df[target].values
     X = df[feature_cols].values
 
-    # 2. 표준화 (선형 모델에 유리)
+    # 2. 분할 (seed 유지)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=seed)
+
+    # 3. 표준화 (train 에만 fit — 테스트 누수 방지)
     if config.get("use_features", True):
         from sklearn.preprocessing import StandardScaler
 
-        X = StandardScaler().fit_transform(X)
-
-    # 3. 분할
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        scaler = StandardScaler().fit(X_train)
+        X_train = scaler.transform(X_train)
+        X_test = scaler.transform(X_test)
 
     # 4. 학습
     model = _build_model(config.get("model_type", "ridge"), config.get("model_params", {}))
@@ -123,7 +126,7 @@ def run_experiment(config: dict = None) -> dict:
     }
     score = round(r2, 4)  # 단일 지표: R²
 
-    return {"config": config, "metrics": metrics, "score": score, "model": model}
+    return {"config": config, "metrics": metrics, "score": score, "kind": "regression", "model": model}
 
 
 def _run_and_save(run_dir: str = None) -> dict:

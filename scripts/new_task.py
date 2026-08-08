@@ -129,9 +129,9 @@ def run_experiment(config=None) -> dict:
 
     t0 = time.time()
     from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import StandardScaler
+    from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-    # 1. 데이터 로드
+    # 1. 데이터 로드 (등록된 dataset, y 는 원본 dtype 보존)
     X, y = load_dataset(config["dataset"])
     target = config.get("target_col")
     if target is not None and target in X.columns:
@@ -140,39 +140,53 @@ def run_experiment(config=None) -> dict:
     X = X.reset_index(drop=True)
     y = y.reset_index(drop=True)
 
-    # 2. 분류/회귀 자동 판정
-    import numpy as _np
-    arr = _np.asarray(y)
-    uniq = _np.unique(arr)
-    is_regression = not (len(uniq) <= 20)  # 클래스 수 <=20 → 분류
-    kind = "regression" if is_regression else "classification"
+    # 2. 분류/회귀 판정 (tasks_registry.infer_kind 와 동일 기준)
+    from research.tasks_registry import infer_kind
 
-    # 3. 전처리 (스케일링)
-    if config.get("scale", True):
-        X = pd.DataFrame(StandardScaler().fit_transform(X), columns=X.columns)
+    kind = infer_kind(y)
+    is_regression = kind == "regression"
 
-    # 4. 분할
+    # 3. 타깃 정규화: 회귀=수치 강제, 분류=라벨 인코딩(문자열 포함)
+    if is_regression:
+        y = pd.to_numeric(y, errors="coerce")
+        if y.isna().any():
+            raise ValueError("회귀 타깃에 숫자로 변환 불가능한 값이 있습니다.")
+    else:
+        le = LabelEncoder()
+        y = le.fit_transform(y)
+
+    # 4. 수치 특성만 스케일링 (문자열/ID 컬럼 제외)
+    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+    X_num = X[numeric_cols].reset_index(drop=True)
+    y = pd.Series(y).reset_index(drop=True)
+
+    # 5. 분할 (회귀 시 stratify 비적용)
     if is_regression:
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
+            X_num, y, test_size=0.2, random_state=42
         )
     else:
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, stratify=y, random_state=42
+            X_num, y, test_size=0.2, stratify=y, random_state=42
         )
 
-    # 5. 학습/평가
+    # 6. 스케일링 (train 에만 fit — 테스트 누수 방지)
+    if config.get("scale", True):
+        scaler = StandardScaler().fit(X_train)
+        X_train = scaler.transform(X_train)
+        X_test = scaler.transform(X_test)
+
+    # 7. 학습/평가
+    y_true = np.asarray(y_test)
     if is_regression:
-        from sklearn.metrics import mean_absolute_error, r2_score
-        from sklearn.metrics import mean_squared_error
+        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
         model = build_regressor(config.get("model_type", "ridge"), config.get("model_params", {}))
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
-        y_true = _np.asarray(y_test)
         r2 = float(r2_score(y_true, y_pred))
         metrics = {
-            "target_col": target,
+            "target": target,
             "r2": r2,
             "rmse": float(mean_squared_error(y_true, y_pred) ** 0.5),
             "mae": float(mean_absolute_error(y_true, y_pred)),
@@ -188,20 +202,39 @@ def run_experiment(config=None) -> dict:
 
         model = build_classifier(config.get("model_type", "logistic"), config.get("model_params", {}))
         model.fit(X_train, y_train)
-        y_proba = model.predict_proba(X_test)[:, 1]
-        y_pred = (y_proba >= 0.5).astype(int)
-        y_true = _np.asarray(y_test)
+        n_classes = len(np.unique(y_train))
+
+        if n_classes == 2:
+            y_proba = model.predict_proba(X_test)[:, 1]
+            y_pred = (y_proba >= 0.5).astype(int)
+            roc_auc = float(roc_auc_score(y_true, y_proba))
+            prec, rec, _ = precision_recall_curve(y_true, y_proba)
+            pr_auc = float(auc(rec, prec))
+        else:
+            # 멀티클래스: 1-vs-rest 평균
+            y_proba = model.predict_proba(X_test)
+            y_pred = np.asarray(model.predict(X_test))
+            prs = []
+            rocs = []
+            for c in range(n_classes):
+                bin_y = (y_true == c).astype(int)
+                prec, rec, _ = precision_recall_curve(bin_y, y_proba[:, c])
+                if len(prec) < 2 or len(rec) < 2:
+                    continue
+                prs.append(auc(rec, prec))
+                if roc_auc_score(bin_y, y_proba[:, c]) >= 0.0:
+                    rocs.append(roc_auc_score(bin_y, y_proba[:, c]))
+            pr_auc = float(np.mean(prs)) if prs else 0.0
+            roc_auc = float(np.mean(rocs)) if rocs else 0.0
 
         f1 = float(f1_score(y_true, y_pred, zero_division=0))
-        prec, rec, _ = precision_recall_curve(y_true, y_proba)
-        pr_auc = float(auc(rec, prec))
         metrics = {
             "accuracy": float(accuracy_score(y_true, y_pred)),
             "precision": float(precision_score(y_true, y_pred, zero_division=0)),
             "recall": float(recall_score(y_true, y_pred, zero_division=0)),
             "f1": f1,
             "pr_auc": pr_auc,
-            "roc_auc": float(roc_auc_score(y_true, y_proba)),
+            "roc_auc": roc_auc,
             "n_train": int(len(X_train)),
             "n_test": int(len(X_test)),
             "elapsed_sec": round(time.time() - t0, 2),
@@ -264,16 +297,14 @@ PROGRAM_TEMPLATE = """# __TASK_ID__ — 자율 연구 지침서
 
 
 def _infer_kind(dataset: str, target: str) -> str:
-    """target 컬럼 값 유형으로 분류/회귀 판정."""
+    """target 컬럼 값 유형으로 분류/회귀 판정 (tasks_registry.infer_kind 위임)."""
     meta = data_manager.get_dataset(dataset)
     df = pd_read_csv(meta)
     if target not in df.columns:
         return "regression"
-    values = df[target].dropna()
-    if values.dtype.kind in "if":
-        uniq = values.nunique()
-        return "classification" if uniq <= 2 else "regression"
-    return "classification"
+    from research.tasks_registry import infer_kind
+
+    return infer_kind(df[target])
 
 
 def pd_read_csv(meta: dict):

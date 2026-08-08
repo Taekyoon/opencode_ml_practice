@@ -157,12 +157,16 @@ def get_dataset(name: str) -> dict:
 
 
 def load_dataset(name: str) -> tuple[pd.DataFrame, pd.Series | None]:
-    """dataset 을 (X, y)로 로드한다. target이 없으면 y=None."""
+    """dataset 을 (X, y)로 로드한다. target이 없으면 y=None.
+
+    y 는 원본 dtype 을 보존한다 (숫자·문자열 모두). 도메인에 맞는 캐스팅은
+    러너가 kind(=tasks_registry.infer_kind) 기준으로 수행한다.
+    """
     meta = get_dataset(name)
     df = pd.read_csv(meta["source_file"])
     target = meta["target_col"]
     if target and target in df.columns:
-        y = df[target].astype(int)
+        y = df[target]
         X = df.drop(columns=[target])
     else:
         y = None

@@ -26,7 +26,7 @@ if PROJECT_ROOT not in sys.path:
 RESULTS_DIR = os.path.join(TASK_DIR, "results")
 
 from src.data_generation import generate_synthetic_data
-from src.preprocessing import add_synthetic_missing, fill_missing, scale_features
+from src.preprocessing import add_synthetic_missing, fill_missing
 
 # ===========================================================================
 # [에이전트 수정 영역] - get_config() 내 하이퍼파라미터를 조정한다
@@ -62,10 +62,6 @@ def _load_data(config: dict):
 
         X, y = load_dataset(dataset)
         X = X.copy()
-        if y is not None:
-            y = y.astype(int)
-        if config.get("scale", True):
-            X, _ = scale_features(X)
         print(f"[runner] dataset '{dataset}' 사용: {X.shape}")
         return X, y
 
@@ -75,9 +71,6 @@ def _load_data(config: dict):
 
     y = df["failure"].astype(int)
     X = df.drop(columns=["failure"])
-
-    if config.get("scale", True):
-        X, _ = scale_features(X)
     return X, y
 
 
@@ -119,7 +112,7 @@ def _apply_imbalance(X_train, y_train, strategy: str):
 
 
 def run_experiment(config: dict = None) -> dict:
-    """실험 실행 → {"config", "metrics", "score"} 반환."""
+    """실험 실행 → {"config", "metrics", "score", "kind"} 반환."""
     from sklearn.metrics import (
         auc,
         f1_score,
@@ -133,37 +126,62 @@ def run_experiment(config: dict = None) -> dict:
     if config is None:
         config = copy.deepcopy(get_config())
 
+    seed = config.get("seed", 42)
+
     # 1. 데이터 준비
     X, y = _load_data(config)
 
-    # 2. 분할 (stratify 고정, seed 42)
+    # 문자열/범주형 라벨 → 정수 인코딩 (LabelEncoder, 분류 전제)
+    if not isinstance(y, np.ndarray):
+        y = y.to_numpy()
+    if y.dtype.kind not in "iu":
+        from sklearn.preprocessing import LabelEncoder
+
+        y = LabelEncoder().fit_transform(y)
+
+    # 2. 분할 (stratify 고정, seed 유지)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=42
+        X, y, test_size=0.2, stratify=y, random_state=seed
     )
 
-    # 3. 불균형 대응 (SMOTE는 train에만 적용)
+    # 3. 스케일링 (train 에만 fit — 테스트 누수 방지)
+    if config.get("scale", True):
+        from sklearn.preprocessing import StandardScaler
+
+        scaler = StandardScaler().fit(X_train)
+        X_train = scaler.transform(X_train)
+        X_test = scaler.transform(X_test)
+
+    # 4. 불균형 대응 (SMOTE는 train에만 적용)
     strategy = config.get("imbalance_strategy", "none")
     X_train, y_train = _apply_imbalance(X_train, y_train, strategy)
 
-    # 4. 모델 학습
+    # 5. 모델 학습
     t0 = time.time()
     model = _build_model(config.get("model_type", "logistic"), config.get("model_params", {}))
     model.fit(X_train, y_train)
     y_proba = model.predict_proba(X_test)[:, 1]
 
-    # 5. 임계값 적용
+    # 6. 임계값 적용
     threshold = config.get("threshold", 0.5)
     if config.get("optimize_threshold", False):
-        # F1 최적화 임계값 탐색 (score 개선 목적)
+        # F1 최적 임계값 탐색 — 테스트셋이 아니라 검증셋에서 수행 (score 부풀림 방지)
         from sklearn.metrics import precision_recall_curve
 
-        p_curve, r_curve, t_curve = precision_recall_curve(y_test, y_proba)
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_train, y_train, test_size=0.2, stratify=y_train, random_state=seed
+        )
+        _m = _build_model(config.get("model_type", "logistic"), config.get("model_params", {}))
+        _m.fit(X_train, y_train)
+        v_proba = _m.predict_proba(X_val)[:, 1]
+
+        p_curve, r_curve, t_curve = precision_recall_curve(y_val, v_proba)
         denom = p_curve[:-1] + r_curve[:-1]
         f1s = np.divide(2 * p_curve[:-1] * r_curve[:-1], denom, out=np.zeros_like(denom), where=denom > 0)
         threshold = float(t_curve[np.argmax(f1s)])
     y_pred = (y_proba >= threshold).astype(int)
 
-    # 6. 평가 (단일 지표: score = F1 × PR-AUC)
+    # 7. 평가 (단일 지표: score = F1 × PR-AUC)
     metrics = {
         "accuracy": float(np.mean(y_pred == y_test)),
         "precision": float(precision_score(y_test, y_pred, zero_division=0)),
@@ -178,7 +196,7 @@ def run_experiment(config: dict = None) -> dict:
 
     score = round(metrics["f1"] * metrics["pr_auc"], 4)
 
-    return {"config": config, "metrics": metrics, "score": score, "model": model}
+    return {"config": config, "metrics": metrics, "score": score, "kind": "classification", "model": model}
 
 
 def _run_and_save(run_dir: str = None) -> dict:

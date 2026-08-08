@@ -133,6 +133,7 @@ def _evaluate_store(task_id: str, **context):
         "task_id": task_id,
         "run_id": result["run_id"],
         "score": result["score"],
+        "metrics": result["metrics"],
         "prev_best": prev_best,
         "new_best": new_best,
         "improved": new_best is not None and prev_best is not None and new_best > prev_best,
@@ -149,18 +150,33 @@ def _update_wiki(task_id: str, eval_info: dict):
     task_page = os.path.join(WIKI_DIR, "tasks", f"{task_id}.md")
     log_path = os.path.join(WIKI_DIR, "log.md")
     os.makedirs(os.path.dirname(task_page), exist_ok=True)
+    if not os.path.exists(log_path):
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, "w", encoding="utf-8") as _f:
+            _f.write("# Research Wiki — Activity Log\n\n")
+        print(f"[wiki] log.md 없어 생성")
 
     run_id = eval_info["run_id"]
     score = eval_info["score"]
+    metrics = eval_info.get("metrics") or {}
     improved = bool(eval_info.get("improved"))
     date_str = datetime.now().strftime("%Y-%m-%d")
+    # metrics.json 의 지표 채움 (회귀/분류 표 열 구조에 맞게)
+    f1 = metrics.get("f1")
+    pr_auc = metrics.get("pr_auc")
+    rmse = metrics.get("rmse")
 
     # 1) task 페이지 "현재 최고 결과" 표의 분리 행 바로 뒤에 새 행 삽입
     if os.path.exists(task_page):
         with open(task_page, encoding="utf-8") as f:
             content = f.read()
         star = "★ " if improved else ""
-        new_row = f"| {run_id} | **{score}** | | | {date_str} {star}(자동 기록) |"
+        # 분류 표: run_id | score(F1×PR-AUC) | F1 | PR-AUC | 핵심 변경사항
+        # 회귀 표: run_id | score(R²) | RMSE | 핵심 변경사항
+        if task_id == "quality_regression" or (metrics and rmse is not None):
+            new_row = f"| {run_id} | **{score}** | {rmse if rmse is not None else '—'} | {date_str} {star}(자동 기록) |"
+        else:
+            new_row = f"| {run_id} | **{score}** | {f1 if f1 is not None else '—'} | {pr_auc if pr_auc is not None else '—'} | {date_str} {star}(자동 기록) |"
         # "현재 최고 결과" 섹션 안 첫 번째 표의 분리 행(|---|...) 다음에 삽입
         inserted = re.sub(
             r"(## 현재 최고 결과.*?\n\|[-| :]+ *\| *\n)",
@@ -178,8 +194,17 @@ def _update_wiki(task_id: str, eval_info: dict):
     else:
         print(f"[wiki:{task_id}] tasks 페이지 없음 → 수동 생성 필요: {task_page}")
 
-    # 2) log.md append
+    # 2) log.md append (파일 끝 개행 보장 — grep "^## \[" 파싱 계약 유지)
+    with open(log_path, "rb") as f:
+        f.seek(0, os.SEEK_END)
+        size = f.tell()
+        ends_with_nl = False
+        if size > 0:
+            f.seek(size - 1)
+            ends_with_nl = f.read(1) == b"\n"
     with open(log_path, "a", encoding="utf-8") as f:
+        if size > 0 and not ends_with_nl:
+            f.write("\n")
         entry = f"## [{date_str}] ingest | {task_id} | {run_id} | score={score}"
         if improved:
             entry += " | BEST"
