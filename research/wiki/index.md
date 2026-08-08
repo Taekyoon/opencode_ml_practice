@@ -9,6 +9,7 @@
 
 - [overview.md](overview.md) — 프로젝트 대시보드 (세션 진입점)
 - [log.md](log.md) — 연대기순 활동 기록 (append-only)
+- [learning_progress.md](learning_progress.md) — 튜토리얼 학습 진행 기록
 
 ## Tasks (태스크별 발견사항)
 
