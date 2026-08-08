@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# 가상 환경
+.venv/
+venv/
+env/
+
+# 데이터/산출물 (대용량)
+data/*.csv
+plots/*.png
+
+# 로그/실험 기록
+logs/
+experiments/
+mlruns/
+
+# IDE/OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
