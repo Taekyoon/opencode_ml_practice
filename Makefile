@@ -46,6 +46,23 @@ experiments:
 experiments-local:
 	python -c "from experiments import run_baseline, run_imbalance, run_extreme, run_scalability, summarize_all; run_baseline(); run_imbalance(); run_extreme(); run_scalability(); print('요약:', summarize_all())"
 
+## 자율 연구 루프 실행 (에이전트가 수정한 runner 실행)
+research:
+	$(AIRFLOW_HOME_CMD) airflow dags trigger ml_research_loop
+
+## 자율 연구 루프를 로컬에서 직접 실행 (Airflow 없이, 검증용)
+research-local:
+	python experiment_runner.py
+	@echo "실험 결과: cat research/results/run_*/metrics.json"
+
+## 연구 실험 기록 확인
+research-log:
+	python -m src.research_store
+
+## 최신 실험 리포트 확인
+research-report:
+	@cat research/reports/report_*.md 2>/dev/null || echo "아직 리포트 없음"
+
 ## 백엔드 프로세스 중지 (scheduler/webserver, master 전용)
 stop:
 	pkill -f "airflow scheduler" || true
