@@ -20,8 +20,24 @@ plots/*.png
 
 # 로그/실험 기록
 logs/
-experiments/
+experiments/results/
+experiments/summary.json
 mlruns/
+
+# Airflow (데모 운영 산출물)
+airflow/airflow.db
+airflow/airflow.cfg
+airflow/airflow-webserver.pid
+airflow/logs/
+airflow/webserver_config.py
+mock/experiment_data.db
+mock/notifications/
+data/raw/
+data/processed/
+data/quality/
+data/archived/
+models/
+results/
 
 # IDE/OS
 .DS_Store
