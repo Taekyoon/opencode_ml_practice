@@ -11,6 +11,7 @@ task 흐름: prepare_data → run_experiment → evaluate_store → generate_rep
 
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -138,6 +139,56 @@ def _evaluate_store(task_id: str, **context):
     }
 
 
+def _update_wiki(task_id: str, eval_info: dict):
+    """실험 결과를 research/wiki/ 에 반영한다 (Ingest 자동화).
+
+    1. tasks/<task_id>.md 의 "현재 최고 결과" 표에 새 run 행 추가 (★ = 신규 최고)
+    2. log.md 에 append (연대기 기록)
+    """
+    WIKI_DIR = os.path.join(PROJECT_ROOT, "research", "wiki")
+    task_page = os.path.join(WIKI_DIR, "tasks", f"{task_id}.md")
+    log_path = os.path.join(WIKI_DIR, "log.md")
+    os.makedirs(os.path.dirname(task_page), exist_ok=True)
+
+    run_id = eval_info["run_id"]
+    score = eval_info["score"]
+    improved = bool(eval_info.get("improved"))
+    date_str = datetime.now().strftime("%Y-%m-%d")
+
+    # 1) task 페이지 "현재 최고 결과" 표의 분리 행 바로 뒤에 새 행 삽입
+    if os.path.exists(task_page):
+        with open(task_page, encoding="utf-8") as f:
+            content = f.read()
+        star = "★ " if improved else ""
+        new_row = f"| {run_id} | **{score}** | | | {date_str} {star}(자동 기록) |"
+        # "현재 최고 결과" 섹션 안 첫 번째 표의 분리 행(|---|...) 다음에 삽입
+        inserted = re.sub(
+            r"(## 현재 최고 결과.*?\n\|[-| :]+ *\| *\n)",
+            lambda m: m.group(1) + new_row + "\n",
+            content,
+            count=1,
+            flags=re.DOTALL,
+        )
+        if inserted != content:
+            with open(task_page, "w", encoding="utf-8") as f:
+                f.write(inserted)
+            print(f"[wiki:{task_id}] 최고 결과 표에 run 기록 (run={run_id}, score={score})")
+        else:
+            print(f"[wiki:{task_id}] 최고 결과 표 패턴 미일치 → 수동 갱신 권장: {task_id}")
+    else:
+        print(f"[wiki:{task_id}] tasks 페이지 없음 → 수동 생성 필요: {task_page}")
+
+    # 2) log.md append
+    with open(log_path, "a", encoding="utf-8") as f:
+        entry = f"## [{date_str}] ingest | {task_id} | {run_id} | score={score}"
+        if improved:
+            entry += " | BEST"
+        f.write(entry + "\n")
+    print(f"[wiki:{task_id}] log.md 기록")
+
+    return {"wiki_updated": True}
+
+
 def _generate_report(task_id: str, **context):
     """task별 일일 리포트 생성."""
     _guard(task_id, context)
@@ -177,7 +228,11 @@ def _generate_report(task_id: str, **context):
         f.write("\n".join(lines))
 
     print(f"[report:{task_id}] 생성됨: {report_path}")
-    return {"report_path": report_path}
+
+    # wiki 반영 (Ingest 자동화)
+    _update_wiki(task_id, eval_info)
+
+    return {"report_path": report_path, "wiki_updated": True}
 
 
 with DAG(

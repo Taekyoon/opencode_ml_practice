@@ -22,6 +22,7 @@ semiconductor_failure_prediction/
 │   │   ├── program.md           # 연구 지침서
 │   │   └── results/
 │   ├── quality_regression/      # 빌트인 회귀 태스크
+│   ├── wiki/                    # 실험 기록 지식 베이스 (index/log/overview/tasks/techniques/...)
 │   ├── datasets/                # 등록된 dataset 저장소 (research.db 가 인덱스)
 │   ├── inbox/                   # 새 데이터 투입 폴더
 │   └── research.db              # dataset/실험 기록 SQLite
@@ -101,13 +102,51 @@ python -m src.data_manager
 ## 8. 커밋 시 유의
 
 - `scripts/`와 `research/tasks_registry.py` 및 `Makefile`은 소스이므로 커밋 대상
+- `research/wiki/` 는 지식 산출물로 커밋한다 (세션 간 공유 필수)
 - `research/**/results/`, `research/research.db`, `airflow/` 운영 산출물은 gitignore 대상 (커밋 금지)
 - `tasks_extra.json` 은 프로젝트 정의(사용자 등록 task)라면 커밋 OK, 임시 테스트만 생성됐던 경우 제거 후 커밋
 
-## 9. 다음 세션이 이어할 여지 (TODO)
+## 9. 실험 기록 위키 (LLM Wiki 패턴)
 
-이 문서는 스캐폴드 기반 워크플로의 기반을 기록했다. 다음 세션에서 검토할 항목:
-- [ ] `scripts/new_task.py` 의 태스크 삭제(`unregister_task`) CLI 지원
-- [ ] 템플릿 선택 옵션 (baseline뿐 아니라 XGBoost/LGBM 등)
-- [ ] `program.md` 생성시 연구 스프린트 시작 템플릿 추가
-- [ ] 연구 에이전트의 결정 기록(feedback 루프) 문서화
+**핵심 원칙**: 실험 결과는 `research.db`(숫자) + `research/wiki/`(지식) 양쪽에 기록한다.
+`wiki/`는 LLM이 유지하는 markdown 지식 베이스로, 세션 간 발견이 누적되는 곳이다.
+
+### 9.1 위키 구조
+
+```
+research/wiki/
+├── index.md              # 모든 페이지 목록 (content 지향, 모든 ingest 후 갱신)
+├── log.md                # 연대기순 기록 (append-only)
+├── overview.md           # 대시보드 — 새 세션은 이걸 먼저 읽는다
+├── tasks/<task_id>.md    # 태스크별 누적 발견
+├── techniques/           # 기법별 종합 (smote, scaling, model_comparison 등)
+├── datasets/             # 데이터셋 분포/주의사항
+└── synthesis/
+    └── lessons_learned.md  # 교차 태스크 교훈 + 다음 방향
+```
+
+### 9.2 Ingest 규칙 (새 실험/개발 후 반드시)
+
+1. `research.db`에서 최신 run을 확인 (`src.research_store`)
+2. `tasks/<task_id>.md` 갱신 — 최고 결과 테이블에 새 run 추가, 발견사항 1줄 기록
+3. 사용한 기법이 있으면 `techniques/<기법>.md`에도 기록 (어느 태스크/조건에서 효과적인지 맥락 포함)
+4. `log.md`에 append: `## [YYYY-MM-DD] ingest | <task_id> | <run_id> | score=<score>`
+5. `index.md` 갱신 (페이지 추가/변경 시)
+
+### 9.3 Query 규칙 (질문/분석 시)
+
+1. `wiki/index.md` → 관련 페이지 탐색 → 읽고 종합
+2. 가치 있는 답변/인사이트가 나오면 → 새 wiki 페이지로 파일링 (chat에만 두지 않음)
+
+### 9.4 Lint 규칙 (정기 검진, `make wiki-lint`)
+
+- 모순: 태스크 간 모순된 발견 → 양쪽 페이지에 맥락 명시
+- 고아 페이지: index.md에 없는 위키 페이지 확인
+- 오래된 데이터: score 갱신 후 7일 경과한 task 페이지 표시
+- broken 링크: 내부 `../` 링크 존재 여부 확인
+
+### 9.5 실험 규율
+
+- **한 번에 하나의 변수만** 변경 (A/B 원칙)
+- 실험 후 wiki 갱신은 **tasks → techniques → log → index** 순서
+- 효과있었다/없었다를 **맥락과 함께** 기록

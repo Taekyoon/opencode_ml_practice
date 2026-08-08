@@ -3,7 +3,7 @@
 
 AIRFLOW_HOME_CMD = AIRFLOW_HOME=$(PWD)/airflow
 
-.PHONY: init dags db seed scheduler webserver ui stop clean demo new-task
+.PHONY: init dags db seed scheduler webserver ui stop clean demo new-task wiki-lint
 
 ## Airflow DB 초기화 + 관리자 계정 (admin/admin)
 init:
@@ -63,6 +63,10 @@ research-local:
 ##   make new-task TASK=maintenance_cost DATASET=lab_sensor_data TARGET=failure NOTE="설명"
 new-task:
 	python scripts/new_task.py $(TASK) --dataset $(DATASET) --target $(TARGET) --note "$(NOTE)"
+
+## 실험 기록 위키 건강 검진 (broken link/고아/미등록/오래된 데이터)
+wiki-lint:
+	python scripts/wiki_lint.py
 
 ## inbox에 있는 새 데이터 확인 + 등록
 inbox:
