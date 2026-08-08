@@ -204,3 +204,10 @@ Phase 5: 운영 완성    (Docker/모니터링/MkDocs/로그 아카이브)
 - `docs/PROJECT_STRATEGY.md` — 100점 달성 로드맵
 - `docs/IMBALANCED_DATA_SPECIALIST_PLAN.md` — 불균형 전문 스킬 계획
 - `README.md` — 프로젝트 실행 방법, 성능 요약
+
+---
+
+## 9. 다음 세션(2차) 기록 안내
+
+2차 세션(태스크 스캐폴드 CLI + 실험 기록 위키)의 대화·의사결정·산출물은
+`docs/CONVERSATION_LOG_TASK_SCAFFOLD_WIKI.md`에 기록되어 있다.
