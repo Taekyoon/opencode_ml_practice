@@ -1,64 +1,94 @@
-# 반도체 제조 제품 Failure 예측 모델
+# opencode_ml_practice — OpenCode ML 자율 연구 튜토리얼
 
-반도체 실험실 공정/측정 수치 데이터에서 제품 failure 여부를 예측하는 로지스틱 회귀 분류 모델입니다.
+> **OpenCode를 배우기 위해 만든 튜토리얼 저장소입니다.**
+> 반도체 failure 예측은 학습용 실습 주제로 삼았고, 저장소의 목적은
+> "AI 에이전트와 함께 ML 파이프라인을 만들고 자동화하는 법"을 익히는 것입니다.
 
-> 저장소: [`Taekyoon/opencode_ml_practice`](https://github.com/Taekyoon/opencode_ml_practice)
+## 이 저장소가 알려주는 것
 
-## 프로젝트 구조
+- **OpenCode** (터미널 AI 코딩 에이전트) 사용법 — 대화로 코드 작성/실행/수정
+- **ML 파이프라인 기본기** — 데이터 → 전처리 → 모델 → 평가의 전체 흐름
+- **자율 ML 연구 루프** — 에이전트 + Airflow DAG + 실험 기록 DB + LLM Wiki까지
+- **스킬/에이전트 제작** — `.opencode/`에서 나만의 전문가를 만드는 법
+
+## 🚀 시작하기 (튜토리얼으로)
+
+```bash
+# 1. clone 후
+git clone https://github.com/Taekyoon/opencode_ml_practice.git
+cd opencode_ml_practice
+
+# 2. Python 3.10+ + 의존 설치
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# 3. 데이터 생성 (튜토리얼 예제용 가상 데이터)
+python -m src.data_generation
+
+# 4. opencode 실행 → 튜토리얼 모드 시작
+opencode
+#    "튜토리얼 시작해줘" 라고 입력하면 학습자 유형별 가이드가 진행됩니다.
+```
+
+튜토리얼 상세: [docs/tutorial/README.md](docs/tutorial/README.md) · A~F 모듈 19개 레슨
+
+| 모듈 | 내용 |
+|------|------|
+| **A. 기초 다지기** | 환경 세팅, 프로젝트 구조, 데이터 이해, OpenCode 시작 |
+| **B. ML 파이프라인** | 전처리 → 모델 학습 → 평가 지표 → 실험 기록 |
+| **C. 자율 연구** | experiment_runner, 태스크 스캐폴드, LLM Wiki, 위키 린트 |
+| **D. Airflow** | DAG 개념, ml_research_loop 해부, 트리거/스케줄 |
+| **E. AI 자동화** | 에이전트/스킬 만들기, 자율 연구 루프 종합 |
+| **F. 종합 프로젝트** | 나만의 태스크로 전체 사이클 직접 실행 |
+
+## 📁 프로젝트 구조
 
 ```
 opencode_ml_practice/
-├── data/
-│   └── synthetic_data.csv      # 가상 반도체 공정 데이터 (5,000행)
-├── plots/
-│   ├── confusion_matrix.png           # 혼동 행렬
-│   ├── roc_curve.png                 # ROC 커브
-│   ├── precision_recall_curve.png    # PR 커브
-│   └── feature_coefficients.png       # 특성 계수
-├── src/
-│   ├── data_generation.py    # 가상 데이터 생성
-│   ├── preprocessing.py      # 결측치/스케일링 전처리
-│   ├── model.py              # 로지스틱 회귀 학습
-│   └── evaluation.py          # 평가 및 시각화
-├── notebooks/               # Jupyter 분석 노트북
-├── requirements.txt
-└── README.md
+├── src/                    # 재사용 코어 모듈 (데이터/전처리/모델/평가/저장)
+├── research/               # 연구 작업 공간 (tasks/, wiki/, runner, research.db)
+│   ├── tasks_registry.py   # 태스크 레지스트리 (빌트인 + tasks_extra.json)
+│   ├── failure_prediction/ # 실습용 분류 태스크 (반도체 failure)
+│   ├── quality_regression/ # 실습용 회귀 태스크
+│   └── wiki/               # LLM 위키 지식 베이스 (index/log/overview/tasks/...)
+├── airflow/dags/           # ml_research_loop 자율 연구 DAG
+├── scripts/                # new_task 스캐폴드 CLI, wiki_lint 검진
+├── docs/tutorial/          # 대화형 튜토리얼 본체 (A~F 모듈)
+├── .opencode/              # OpenCode 에이전트 / 스킬 정의
+├── AGENTS.md               # AI 에이전트 작업 가이드 (필수)
+└── Makefile                # make init / scheduler / research / wiki-lint 등
 ```
 
-## 실행 방법
+## ⚙️ 자율 연구 프레임워크 사용법
+
+튜토리얼 수료 후에는 아래 프레임워크로 자유롭게 연구합니다:
 
 ```bash
-# 1. 의존 설치
-pip install -r requirements.txt
-
-# 2. 가상 데이터 생성 (data/synthetic_data.csv)
-python -m src.data_generation
-
-# 3. 전처리 확인
-python -m src.preprocessing
-
-# 4. 모델 학습 (계수 확인)
-python -m src.model
-
-# 5. 평가 및 시각화 (plots/ 폴더에 차트 저장)
-python -m src.evaluation
+make research-task TASK=failure_prediction   # 특정 태스크 즉시 실행 (Airflow)
+make research                                # 등록된 전체 태스크 실행
+python scripts/new_task.py <task> --dataset <ds> --target <col>  # 새 태스크 스캐폴드
+make wiki-lint                               # 위키 지식 베이스 건강 검진
 ```
 
-## 특징
+자세한 규칙/워크플로: [AGENTS.md](AGENTS.md)
 
-- **데이터**: 공정 변수(온도, 압력, 공정시간, 화학농도) + 측정 변수(두께, 비저항, 도핑농도)
-- **불량률**: 약 16.7% (불량 837 / 합격 4163)
-- **모델**: 로지스틱 회귀 (L2 정규화)
-- **전처리**: 중앙값 결측치 대체, 표준화(StandardScaler)
+## 🧪 실습 데이터 (학습용 예제)
 
-## 기준 결과 (데모 데이터셋)
+가상 반도체 공정 데이터 `data/synthetic_data.csv` (5,000행)
 
-| 지표 | 값 |
+| 항목 | 값 |
 |------|------|
-| Accuracy | 95.1% |
-| Precision | 89.9% |
-| Recall | 79.6% |
-| F1-score | 84.4% |
+| 불량률 | 약 16.7% (불량 837 / 합격 4163) |
+| 베이스라인 | 로지스틱 회귀 + StandardScaler |
+| Accuracy / Precision | 95.1% / 89.9% |
+| Recall / F1 | 79.6% / 84.4% |
 | AUC-ROC | 0.986 |
 
-> 실제 반도체 데이터를 적용하면 특성 공학(공정 순서, 시간 시퀀스 등)과 도메인 지식 기반 특성 선택이 필요합니다.
+> 실제 산업 데이터가 아닌 **학습용 합성 데이터**입니다.
+> 실습 구조는 실제 반도체 품질 분석과 동일한 파이프라인(특성 공학·불균형 대응 가능)을 따릅니다.
+
+## 📚 참고
+
+- **OpenCode** 도움말: [https://opencode.ai](https://opencode.ai)
+- 튜토리얼 학습자 유형: OpenCode 초보 / ML 초보 / ML 실무자 / AI 자동화 학습자
+- 진행 기록: `research/wiki/learning_progress.md` (OpenCode가 자동 갱신)
