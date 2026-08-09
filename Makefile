@@ -3,7 +3,7 @@
 
 AIRFLOW_HOME_CMD = AIRFLOW_HOME=$(PWD)/airflow
 
-.PHONY: init dags db seed scheduler webserver ui stop clean demo new-task wiki-lint archive
+.PHONY: init dags db seed scheduler webserver ui stop clean demo new-task wiki-lint archive test
 
 ## Airflow DB 초기화 + 관리자 계정 (admin/admin)
 init:
@@ -85,6 +85,10 @@ research-report:
 stop:
 	pkill -f "airflow scheduler" || true
 	pkill -f "airflow webserver" || true
+
+## 유닛 테스트 실행 (tests/)
+test:
+	python -m pytest tests/ -q
 
 ## 전체 데모: 초기화 → 시드 → 스케줄러+UI 시작
 demo: init seed scheduler ui

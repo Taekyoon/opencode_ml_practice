@@ -114,6 +114,7 @@ python -m src.data_manager
 - 기존 스타일 유지: 결과 `json` 저장, `research.db` 기록은 `src.research_store` 사용
 - 에이전트(ml-researcher)의 튜닝은 `get_config()`를 수정하는 방식으로만 함 — 변경 시 `_rationale`에 근거를 남기고, 게이트(`src.validation_gate`)를 통과하기 전에는 best로 승격하지 않는다
 - 다른 태스크의 runner를 복제하지 않고, 새 스킬/새 태스크가 필요하면 스캐폴드를 사용
+- `src/` 로직을 바꾸면 `make test` (`python -m pytest tests/ -q`)로 회귀 확인한다 — 특히 게이트 규칙 추가 시 기존 4개 규칙의 경계 케이스를 깨지 않아야 한다
 
 ## 8. 커밋 시 유의
 
