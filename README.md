@@ -42,17 +42,18 @@ opencode
 
 > 모델 전환: opencode 세션 내에서 `/models` 로 변경하거나 `opencode.json`의 `"model"` 필드로 기본값을 고정할 수 있습니다.
 
-튜토리얼 상세: [docs/tutorial/README.md](docs/tutorial/README.md) · A~G 모듈 25개 레슨
+튜토리얼 상세: [docs/tutorial/README.md](docs/tutorial/README.md) · A~I 모듈 30개 레슨
 
 | 모듈 | 내용 |
 |------|------|
 | **A. 기초 다지기** | 환경 세팅, 프로젝트 구조, 데이터 이해, OpenCode 시작 |
-| **B. ML 파이프라인** | 전처리 → 모델 학습 → 평가 지표 → 실험 기록 → 텍스트 데이터/분류 |
+| **B. ML 파이프라인** | 전처리 → 모델 학습 → 평가 지표 → 실험 기록 → 텍스트 데이터/분류 → 웨이퍼 이미지/분류 |
 | **C. 자율 연구** | experiment_runner, 태스크 스캐폴드, LLM Wiki, 위키 린트 |
 | **D. Airflow** | DAG 개념, ml_research_loop 해부, 트리거/스케줄 |
 | **E. AI 자동화** | 에이전트/스킬 만들기, 자율 연구 루프 종합 |
 | **F. 종합 프로젝트** | 나만의 태스크로 전체 사이클 직접 실행 (수료) |
 | **G. AI 가드레일 (선택 심화)** | 프롬프트 공격 탐지, 가드레일 모델·에이전트, 자유 확장 |
+| **I. 이미지 AI (선택 심화)** | 웨이퍼 이미지 이상탐지, 특징 공학, 나만의 비전 태스크 |
 
 ## 📁 프로젝트 구조
 
@@ -64,10 +65,11 @@ opencode_ml_practice/
 │   ├── failure_prediction/ # 실습용 분류 태스크 (반도체 failure)
 │   ├── quality_regression/ # 실습용 회귀 태스크
 │   ├── prompt_guard/       # 프롬프트 공격 탐지 태스크 (G 모듈)
+│   ├── wafer_vision/       # 웨이퍼맵 결함 분류 태스크 (B8/I 모듈)
 │   └── wiki/               # LLM 위키 지식 베이스 (index/log/overview/tasks/...)
 ├── airflow/dags/           # ml_research_loop 자율 연구 DAG
 ├── scripts/                # new_task 스캐폴드 CLI, wiki_lint 검진
-├── docs/tutorial/          # 대화형 튜토리얼 본체 (A~G 모듈)
+├── docs/tutorial/          # 대화형 튜토리얼 본체 (A~I 모듈)
 ├── .opencode/              # OpenCode 에이전트 / 스킬 정의
 ├── AGENTS.md               # AI 에이전트 작업 가이드 (필수)
 └── Makefile                # make init / scheduler / research / wiki-lint 등
