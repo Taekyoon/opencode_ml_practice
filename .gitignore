@@ -32,6 +32,12 @@ research/research.db
 research/inbox/
 research/datasets/
 
+# 아카이브 (보존 코드/문서) — 산출물은 제외
+archive/**/results/
+archive/**/summary.json
+archive/code/experiments/results/
+archive/code/experiments/summary.json
+
 # Airflow (데모 운영 산출물)
 airflow/airflow.db
 airflow/airflow.cfg

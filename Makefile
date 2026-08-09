@@ -3,7 +3,7 @@
 
 AIRFLOW_HOME_CMD = AIRFLOW_HOME=$(PWD)/airflow
 
-.PHONY: init dags db seed scheduler webserver ui stop clean demo new-task wiki-lint
+.PHONY: init dags db seed scheduler webserver ui stop clean demo new-task wiki-lint archive
 
 ## Airflow DB 초기화 + 관리자 계정 (admin/admin)
 init:
@@ -37,14 +37,11 @@ ui:
 trigger:
 	$(AIRFLOW_HOME_CMD) airflow dags trigger daily_semiconductor_pipeline
 
-## 전체 실험 실행 (baseline + SMOTE + 극심 + 스케일링)
-experiments:
-	$(AIRFLOW_HOME_CMD) airflow dags trigger semiconductor_experiments
-	@echo "실험 요약: cat experiments/summary.json"
-
-## 실험을 로컬에서 직접 실행 (Airflow 없이, 검증용)
-experiments-local:
-	python -c "from experiments import run_baseline, run_imbalance, run_extreme, run_scalability, summarize_all; run_baseline(); run_imbalance(); run_extreme(); run_scalability(); print('요약:', summarize_all())"
+## 아카이브된 레거시 실험 코드 보기 (experiments/, semiconductor_experiments DAG)
+##  → archive/code/experiments/, archive/code/semiconductor_experiments_dag.py
+archive:
+	@echo "아카이브 관련 파일:"
+	@find archive -type f | sort
 
 ## 자율 연구 루프 실행 (에이전트가 수정한 runner 실행)
 research:
