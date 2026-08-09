@@ -3,7 +3,7 @@
 ## 학습 목표
 - 실행을 "결과"가 아니라 "이벤트 시퀀스"로 보는 관점을 이해한다
 - 실패한 실행이 기록되지 않으면 에이전트가 왜 같은 실수를 반복하는지 설명할 수 있다
-- 기존 DB를 깨지 않고 스키마를 확장(migration)할 수 있다
+- 기존 DB를 깨지 않고 스키마를 추가 테이블로 확장하는 방식을 설명할 수 있다
 
 ## 배경 지식
 
@@ -23,10 +23,10 @@ if proc.returncode != 0:
 ```
 
 - `run_experiment` 태스크가 실패 → 뒤의 `evaluate_store`는 **실행되지 않는다**
-- `evaluate_store`에서 `record_experiment()`가 호출되지 않으므로 **research.db에 그 실험은 아예 없다**
-- 결과적으로 **실패한 실행은 존재하지 않는 일이 된다**
+- `evaluate_store`에서 `record_experiment()`가 호출되지 않으므로 **`experiments`/`best_run` 테이블 기준으로 그 실험은 아예 없다**
+- 결과적으로 **실패한 실행은 "결과 기록" 속에 존재하지 않는 일이 된다**
 
-`research_store.py`에 `status = "failed"` 코드가 있지만, 이 경로에 도달하는 호출 경로가 현재 없다. 즉 **데드코드**다.
+`research_store.py`에 `status = "failed"` 코드가 있지만, 이 경로에 도달하는 호출 경로가 현재 없다. 즉 **데드코드**다. (실패를 남기려면 `record_event()`로 이벤트는 남길 수 있지만, 결과 표에는 어디에도 없다 — 그래서 이 레슨이 `events` 테이블을 다루는 것이다.)
 
 **왜 위험한가?** 에이전트가 실패를 기억할 수 없으면, 같은 실수를 무한 반복한다:
 1. 하이퍼파라미터를 바꾼다 → 실패 (에러 사유 미기록)
@@ -46,14 +46,18 @@ Shepherd의 `run trace --events`가 바로 이 문제를 해결한다. 실행의
 이미 프로젝트에 `events` 테이블이 구현되어 있다. 구조를 확인하자:
 
 ```bash
-python -c "import sqlite3; print(sqlite3.connect('research/research.db').execute('.schema events').fetchall())" 2>/dev/null || \
 python - <<'PY'
-import sqlite3
-conn = sqlite3.connect('research/research.db')
+import sys; sys.path.insert(0, '.')
+from src.research_store import get_conn   # get_conn이 _migrate_schema()를 호출해 테이블을 만든다
+
+conn = get_conn()
 for r in conn.execute("SELECT sql FROM sqlite_master WHERE name='events'"):
     print(r[0])
 PY
 ```
+
+> 참고: `research/research.db`는 gitignore 대상이라 새 clone에는 없지만, 위처럼
+> `get_conn()`을 거치면 `_migrate_schema()`가 실행되어 `events` 테이블이 자동 생성된다.
 
 다음 4개 컬럼이 있어야 한다:
 
@@ -85,7 +89,13 @@ for e in get_recent_events(5):
 PY
 ```
 
-최근에 실행한 실험의 `started → completed` 이벤트가 보인다. (DAG로 돌리면 자동 기록된다)
+> **관찰 포인트**: 방금 러너를 단독 실행했는데 이벤트가 **새로 추가되지 않았다.**
+
+그 이유는 이벤트를 남기는 곳이 러너가 아니라 **DAG(`ml_research_loop.py`)의
+`_run_experiment()`** 이기 때문이다. 러너 단독 실행은 `metrics.json`만 쓰고
+이벤트는 남기지 않는다. 즉 "누가 실행하느냐"에 따라 이벤트가 기록되거나 되지 않는다.
+
+아래 (b)에서 DAG의 `_run_experiment()`를 흉내 내 시작/실패 이벤트를 직접 남겨보자.
 
 #### (b) 실패 이벤트를 만들어 보기
 
@@ -93,21 +103,14 @@ PY
 
 ```bash
 python - <<'PY'
-import sys; sys.path.insert(0, '.')
+import sys, time; sys.path.insert(0, '.')
 from src.research_store import record_event
 
-# 가짜 실패 시나리오 (실제 DAG 실패 경로 시뮬레이션)
-record_event(
-    "demo_fail_run_001",
-    "started",
-    {"task_id": "failure_prediction", "config_seed": 42},
-)
-record_event(
-    "demo_fail_run_001",
-    "failed",
-    {"returncode": 1, "stderr_tail": "ValueError: missing column 'failure'"},
-)
-print("실패 이벤트 기록 완료")
+# 실행마다 고유한 run_id (재실행해도 중복 누적 방지)
+run_id = f"demo_fail_run_{time.strftime('%Y%m%d_%H%M%S')}"
+record_event(run_id, "started", {"task_id": "failure_prediction", "config_seed": 42})
+record_event(run_id, "failed", {"returncode": 1, "stderr_tail": "ValueError: missing column 'failure'"})
+print("실패 이벤트 기록 완료:", run_id)
 PY
 ```
 
@@ -116,9 +119,10 @@ PY
 ```bash
 python - <<'PY'
 import sys; sys.path.insert(0, '.')
-from src.research_store import get_events
-for e in get_events("demo_fail_run_001"):
-    print(f"{e['event_type']:<10} {e['detail']}")
+from src.research_store import get_recent_events
+for e in get_recent_events(4):
+    if "demo_fail_run" in e["run_id"]:
+        print(f"{e['event_type']:<10} {e['detail']}")
 PY
 ```
 
@@ -147,6 +151,7 @@ PY
 
 > **Shepherd 사이드바** (선택) — 오프라인 격리 환경에서 Shepherd의 이벤트 기록을 보고 비교한다.
 > Shepherd는 `~/.venvs/agent-tools` 격리 venv에만 설치되어 있고, 프로젝트 런타임에는 영향을 주지 않는다.
+> **`~/.venvs/agent-tools/bin/shepherd`가 없으면 이 단계는 통째로 건너뛰어도 된다** — 핵심 개념은 아래와 동일하다.
 
 ```bash
 # 격리 venv에서 (프로젝트 아님)

@@ -1,4 +1,4 @@
-"""실험 결과 검증 게이트 모듈 (athlete-점수 기반 판정).
+"""실험 결과 검증 게이트 모듈 (점수 기반 판정).
 
 - `GateCheck`: 개별 검증 규칙 하나의 결과 (이름 / 통과 여부 / 근거 / 심각도)
 - `GateResult`: 전체 게이트 판정 (error급 규칙이 모두 통과해야 accept)
@@ -6,7 +6,7 @@
 핵심 원칙 (모듈 G 안전 + SkillOpt validation-gate 개념 차용):
 1. 점수가 올랐다고 "개선됐다"고 판단하지 않는다. 근거(checks)를 남긴다.
 2. 게이트는 최적화 대상(런너의 score 계산)과 독립이어야 한다.
-3. 감기는 규칙은 metrics.json에 있는 값만으로 판정한다 (지표 게이트 한정).
+3. 규칙은 metrics.json에 있는 값만으로 판정한다 (지표 게이트 한정).
 4. 에이전트가 "지표 정의를 수정해 게이트를 우회"하지 못하게,
    게이트 규칙은 src/ 고정 모듈로 두고 에이전트는 rules 추가만 허용한다.
 
@@ -96,7 +96,7 @@ def _check_overfitting(metrics: dict) -> GateCheck:
 
 
 def _check_threshold_collapse(metrics: dict) -> GateCheck:
-    """임계값 붕괴: recall=1.0 이면서 precision 급락 → 재계/쓰기가 무의미."""
+    """임계값 붕괴: recall=1.0 이면서 precision 급락 → 예측 판정이 무의미."""
     recall = metrics.get("recall")
     precision = metrics.get("precision")
     if recall is not None and precision is not None:

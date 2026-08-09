@@ -13,7 +13,11 @@
 
 ```json
 {
-  "config": {"model_type": "random_forest", "n_estimators": 300},
+  "config": {
+    "model_type": "random_forest",
+    "model_params": {"n_estimators": 300, "max_depth": null},
+    "_rationale": "비선형 패턴 포착을 위해 RF로 교체"
+  },
   "metrics": {"f1": 0.74, "train_f1": 1.0},
   "score": 0.79
 }
@@ -27,12 +31,15 @@ Shepherd/SkillOpt는 여기서 핵심 개념을 제공한다:
 - **검증(Validate)** — 게이트(J2)로 결과가 진짜 개선인지 확인한다
 - **적용(Apply)** — 검증을 통과한 것만 채택하고, 그렇지 않은 것은 버린다
 
-여기서 핵심 규칙: **제안에 "왜"를 붙인다.** `_rationale` 키는 이 프로젝트에서
-"메타 키" 규약이다. `_`로 시작하는 키는 모델 파라미터로 절대 넘어가지 않도록
-`run_experiment()`가 무시하도록 되어 있고, 그대로 config에 보존되어 records에 남는다.
+여기서 핵심 규칙: **제안에 "왜"를 붙인다.** `_rationale` 키는 이 프로젝트의
+"메타 키" 규약이다. `run_experiment()`는 config에서 `_`로 시작하는 키를 **직접 무시하는
+코드는 없다** — 다만 읽는 키(위 표의 `model_type`,`model_params` 등)가 고정되어 있어
+최상위 `_` 키는 자연히 모델 파라미터로 새어나가지 않는다. 즉 코드가 강제하기보다
+**팀 규약으로 보호**되는 값이다.
 
-> **메타 키 규약**: `get_config()`에 `_`로 시작하는 키를 넣으면 실험 로그에 기록되지만
-> 모델 파라미터로는 사용되지 않는다. "왜 이 실험을 했는가"를 남기는 표준 방법이다.
+> **메타 키 규약**: `get_config()` 최상위에 `_`로 시작하는 키를 넣으면 실험 로그에
+> 기록되지만 모델 파라미터로는 사용되지 않는 "왜 이 실험을 했는가"를 남기는 표준 방법이다.
+> config 최상위가 아닌 `model_params` **안에는 넣지 말 것** — 거기는 그대로 모델 생성자에 전달된다.
 
 ### 중복 제안: 왜 금지인가
 
@@ -95,16 +102,18 @@ PY
 
 ```bash
 python - <<'PY'
-import copy, sys; sys.path.insert(0, '.')
+import copy, sys, time; sys.path.insert(0, '.')
 from research.failure_prediction import experiment_runner as runner
 from src.validation_gate import evaluate_gate
-from src.research_store import record_experiment
+from src.research_store import record_experiment, record_event
 
 # --- 제안 (with reason) ---
 cfg = copy.deepcopy(runner.get_config())
 cfg["_rationale"] = "smote+threshold로 불균형 대응 강화"
 cfg["imbalance_strategy"] = "smote+threshold"
 cfg["optimize_threshold"] = True
+run_id = "run_" + time.strftime("%Y%m%d_%H%M%S")
+record_event(run_id, "started", {"hypothesis": cfg["_rationale"]})
 
 # --- 실행 ---
 result = runner.run_experiment(cfg)
@@ -116,21 +125,25 @@ print("gate accepted:", gate.accepted, "|", gate.reason)
 # --- 적용/기각 ---
 if gate.accepted:
     eid = record_experiment(
-        run_id="run_" + __import__("time").time().strftime("%Y%m%d_%H%M%S").replace(".", ""),
+        run_id=run_id,
         config=result["config"],
         metrics=result["metrics"],
         score=result["score"],
         task_id="failure_prediction",
         score_name="score",
     )
+    record_event(run_id, "completed", {"score": result["score"], "gate_passed": True})
     print("적용됨 (experiment id:", eid, ")")
 else:
-    print("기각됨 — 제안을 수정해서 다시 시도 필요")
+    # best_run 오염은 막되, 실패도 events로 남긴다 (J1 원칙)
+    record_event(run_id, "gate_rejected", {"reason": gate.reason, "score": result["score"]})
+    print("기각됨 — 사유:", gate.reason, "(gate_rejected 이벤트로 기록됨)")
 PY
 ```
 
-**핵심**: 게이트가 기각하면 `record_experiment()`를 호출하지 않음으로써
-"나쁜 실험"이 최고 기록 `best_run`에 오르는 것을 막는다.
+**핵심**: 게이트가 기각하면 `record_experiment()`는 호출하지 않는다 — "나쁜 실험"이
+최고 기록 `best_run`에 오르는 것을 막으면서, J1의 원칙대로 기각 사유를
+`gate_rejected` **이벤트**로 남겨 실패도 존재하는 일로 기록한다.
 
 ### 3단계: 검증 — 이벤트로 되돌아보기
 
@@ -139,37 +152,54 @@ J1에서 만든 이벤트 기록으로 "이번 사이클이 어떤 제안에서 
 ```bash
 python - <<'PY'
 import sys, time; sys.path.insert(0, '.')
-from src.research_store import record_event
+from src.research_store import record_event, get_events
 
-run_id = "run_demo_cycle_001"
+run_id = "run_demo_cycle_" + time.strftime("%Y%m%d_%H%M%S")
 record_event(run_id, "started", {"hypothesis": "smote+threshold가 불균형 개선에 효과적인지"})
 record_event(run_id, "completed", {"score": 0.82, "gate_passed": True})
-print("사이클 이벤트 기록됨:", run_id)
+
+# 기록했다면 꼭 읽어 확인한다 — "왜 이 실험을 했는지"를 재구성할 수 있어야 한다
+for e in get_events(run_id):
+    print(f"{e['event_type']:<10} {e['detail']}")
 PY
 ```
+
+`started`의 `hypothesis`와 `completed`의 `gate_passed`가 같은 `run_id`로 이어져
+"어떤 제안 → 어떤 결과"가 한 줄로 재구성된다.
 
 ### 4단계: 확장 — "기록을 읽지 않으면" 실패 모드 재현
 
 이제 막 배운 개념의 반대를 재현해보자. **과거 이력을 안 보고 같은 config를 또 제안하는** 상황:
+단순 동등 비교(`==`)는 dict의 키 순서까지 봐서 같은 의미여도 오탐이 나므로,
+화살표 없는 정렬 JSON 문자열로 "의미가 같은 config"를 잡아내는 헬퍼를 만든다.
 
 ```bash
 python - <<'PY'
 import sys, json; sys.path.insert(0, '.')
 from src.research_store import get_all_experiments
 
-# 1회차 실행한 config
-c1 = {"model_type": "logistic", "threshold": 0.5}
-# 2회차에서 똑같은 걸 또 제안 (기록을 안 본 상황)
-c2 = {"model_type": "logistic", "threshold": 0.5}
+def is_duplicate(cfg: dict, history) -> str:
+    """과거 실험 이력 중 순서와 무관하게 같은 config가 있으면 기존 run_id 반환."""
+    probe = json.dumps(cfg, sort_keys=True, default=str)
+    for r in history:
+        row = json.loads(r["config_json"])
+        if json.dumps(row, sort_keys=True, default=str) == probe:
+            return r["run_id"]
+    return ""
 
-print("중복 여부:", c1 == c2)
-# 조회로 확인해보면 이미 기록이 있음
-for r in get_all_experiments(task_id="failure_prediction", limit=50):
-    cfg = json.loads(r["config_json"])
-    if cfg.get("model_type") == c1["model_type"] and cfg.get("threshold") == c1["threshold"]:
-        print(f"중복 신호: {r['run_id'][:18]} score={r['score']}")
+# 방금 기록된(적용됨) experiment의 config를 그대로 재제안하는 상황
+hist = get_all_experiments(task_id="failure_prediction", limit=100)
+if not hist:
+    print("조회 대상 없음 — 2단계에서 gate를 통과한 실험이 없다면 먼저 실행할 것")
+else:
+    latest = json.loads(hist[0]["config_json"])
+    dup_id = is_duplicate(latest, hist)
+    print("의미상 중복 감지:", ("있음 -> 기존 " + dup_id) if dup_id else "없음")
 PY
 ```
+
+중복이 감지되면 헬퍼가 기존 `run_id`를 즉시 알려준다. `_rationale`가 달라도
+**구성(config)이 같으면 중복**이라는 점이 핵심이다.
 
 > **교훈**: 기록을 읽으면 반복을 피하고, 안 읽으면 같은 실험이 쌓인다.
 > 에이전트가 발전한다는 것은 "과거 기록을 반영해 더 나은 제안을 만든다"는 뜻이다.
@@ -177,7 +207,7 @@ PY
 ## 이해 확인
 
 1. `_rationale`이 "메타 키"인 이유는 무엇인가? (모델 파라미터로 새어나가면?)
-2. 게이트가 기각한 실험을 `record_experiment()`로 기록하지 않는 이유는?
+2. 게이트가 기각한 실험을 `record_experiment()`로 기록하지 않으면서도, J1의 "실패도 기록한다"는 원칙은 어떻게 지키는가? (`gate_rejected` 이벤트)
 3. "같은 config를 반복 제안"하는 것의 문제는?
 4. 이 J 모듈을 다 듣고 나서, "에이전트를 발전시킨다"는 것의 의미를 한 문장으로 말해보자
 

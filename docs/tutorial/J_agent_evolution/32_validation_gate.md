@@ -51,14 +51,17 @@ print("현재 규칙:", [r.__name__ for r in RULES])
 PY
 ```
 
-`src/validation_gate.py`에 4개 규칙이 이미 있다:
+`src/validation_gate.py`에 4개 규칙이 이미 있다 (1단계 `RULES` 출력의 함수명과 아래 표의 `규칙` 이름 매핑에 주의):
 
-| 규칙 | 판정 기준 | 심각도 |
+| 규칙 (함수명) | 판정 기준 | 심각도 |
 |------|-----------|--------|
-| `overfitting` | train-test F1/R² 갭 > 0.15 | error |
-| `threshold_collapse` | recall>=1.0 & precision<0.3 | error |
-| `random_model` | PR-AUC <= 0.5 | error |
-| `elapsed` | 180초 초과 | warning |
+| `overfitting` (`_check_overfitting`) | train-test F1/R² 갭 > 0.15 | error |
+| `threshold_collapse` (`_check_threshold_collapse`) | recall>=1.0 & precision<0.3 | error |
+| `random_model` (`_check_random_model`) | PR-AUC <= 0.5 | error |
+| `elapsed` (`_check_elapsed`) | 180초 초과 | warning |
+
+> `elapsed`는 **항상 passed=True**로, 기각하지 않는 정보용 규칙이다. 통과해도
+> reason에 `0.3s` 같은 소요시간이 출력되므로 "언제나 경고"라고 놀라지 말 것.
 
 ### 2단계: 빌드 — 실제 러너 결과를 게이트로 판정하기
 
@@ -66,11 +69,11 @@ PY
 
 ```bash
 python research/failure_prediction/experiment_runner.py
-python -m src.validation_gate research/failure_prediction/results/run_*/metrics.json
+python -m src.validation_gate "$(ls -t research/failure_prediction/results/run_*/metrics.json | head -1)"
 ```
 
-> 마지막 `run_*` 폴더를 명시하거나, 끝의 metrics.json을 지정하면 된다.
-> 셸 확장으로 여러 파일이 전달되면 첫 번째만 쓰이니, 최신 것 하나를 지정하자.
+> 셸 글로브(`run_*/metrics.json`)를 그대로 넘기면 `__main__`은 `sys.argv[1]`만 읽어
+> **가장 오래된** run이 선택된다. `ls -t | head -1`로 최신 것을 명시적으로 고른다.
 
 이제 **의도적으로 과적합을 유발**해서 게이트가 기각하는지 보자:
 
@@ -91,6 +94,11 @@ gate = evaluate_gate(result["metrics"])
 print("score:", result["score"])
 print("accepted:", gate.accepted)
 print("reason:", gate.reason)
+
+# 3단계에서 재사용하도록 결과를 임시 파일로 덤프 (메모리 밖으로 보존)
+import json
+with open("/tmp/gate_reject_demo.json", "w") as fh:
+    json.dump({"metrics": result["metrics"]}, fh)
 PY
 ```
 
@@ -101,12 +109,11 @@ PY
 
 ```bash
 python - <<'PY'
-import sys, json, glob; sys.path.insert(0, '.')
+import sys, json; sys.path.insert(0, '.')
 from src.validation_gate import evaluate_gate
 
-# 최신 실패 실험의 metrics.json으로 게이트 판정
-f = sorted(glob.glob("research/failure_prediction/results/run_*/metrics.json"))[-1]
-metrics = json.load(open(f))["metrics"]
+# 2단계에서 덤프한 과적합 데모 결과로 게이트 판정
+metrics = json.load(open("/tmp/gate_reject_demo.json"))["metrics"]
 r = evaluate_gate(metrics)
 print(json.dumps(r.to_dict(), indent=2, ensure_ascii=False))
 PY
@@ -114,27 +121,67 @@ PY
 
 각 규칙마다 `passed`와 `reason`이 붙어 나온다. **기각 이유가 숫자와 함께 문서화**되어
 에이전트가 "다음에 뭘 바꿀지"에 대한 근거를 얻는다.
+(`run_*` 폴더에는 `_run_and_save()`가 저장한 `metrics.json`이 있고, `python -m src.validation_gate <파일>`로 명령줄에서도 판정할 수 있다)
 
 ### 4단계: 확장 — 자기만의 검증 규칙 추가하기
 
 이제 나만의 규칙을 하나 추가해보자. 예: **클래스 불균형 심각도 확인** — minority 비율이 5% 미만이면 warning.
 
 ```bash
-# src/validation_gate.py에 함수를 추가 (복사용)
 cat >> src/validation_gate.py <<'PY'
 
-def _check_imbalance_alert(config: dict) -> GateCheck:
+
+def _check_imbalance_alert(metrics: dict) -> GateCheck:
     """(예시) minority 클래스가 과도하게 적으면 warning."""
+    minority = metrics.get("minority_ratio")
+    if minority is not None and minority < 0.05:
+        return GateCheck(
+            name="imbalance_alert",
+            passed=True,  # warning — 기각하지 않는다
+            reason=f"minority_ratio {minority:.3f} < 0.05 (정보용)",
+            severity="warning",
+        )
     return GateCheck(
         name="imbalance_alert",
         passed=True,
-        reason="모니터링용 규칙 (과도한 불균형 시 재검토 권장)",
+        reason="미기록 또는 정상 범위",
         severity="warning",
     )
 PY
 ```
 
-> 참고: `RULES` 목록에 등록해야 실행된다. 수정 후 `python -m src.validation_gate`로 통합 동작을 확인한다.
+> **중요**: 규칙 함수 시그니처는 반드시 `(metrics: dict)` — `evaluate_gate()`가
+> `rule(metrics)` 형태로 호출하기 때문이다(`validation_gate.py`의 `evaluate_gate` 참고).
+
+이제 `RULES` 목록에 등록한다. `src/validation_gate.py`의 `RULES = [...]` 끝에 한 줄 추가:
+
+```python
+RULES = [
+    _check_overfitting,
+    _check_threshold_collapse,
+    _check_random_model,
+    _check_elapsed,
+    _check_imbalance_alert,   # ← 방금 추가한 규칙
+]
+```
+
+등록이 동작하는지 확인:
+
+```bash
+python - <<'PY'
+import sys; sys.path.insert(0, '.')
+from src.validation_gate import RULES, evaluate_gate
+print("현재 규칙:", [r.__name__ for r in RULES])
+
+# 실제 metrics로 새 규칙도 함께 판정되는지
+m = {"f1": 0.8, "train_f1": 0.9, "recall": 0.9, "precision": 0.8, "pr_auc": 0.7, "minority_ratio": 0.03}
+r = evaluate_gate(m)
+import json
+print(json.dumps(r.to_dict(), indent=2, ensure_ascii=False))
+PY
+```
+
+names 끝에 `_check_imbalance_alert`가 보이고 `imbalance_alert` 체크가 warning으로 합류하면 성공이다.
 
 ## 이해 확인
 
@@ -151,4 +198,4 @@ src/validation_gate.py를 읽고, 현재 규칙 중 하나(예: overfitting)의 
 ```
 
 ## 다음 레슨
-[J3. 제안→검증→적용](33_propose_validate_apply.md) — 변경 근거를 남기고 롤백이 가능한 루프
+[J3. 제안→검증→적용](33_propose_validate_apply.md) — 변경을 근거와 함께 남기고 받아들이는 루프

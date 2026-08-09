@@ -164,6 +164,7 @@ def run_experiment(config: dict = None) -> dict:
     train_proba = model.predict_proba(X_train)[:, 1]
     train_threshold = config.get("threshold", 0.5)
     train_pred = (train_proba >= train_threshold).astype(int)
+    train_y_full = y_train  # 재분할 전 원본 y 보존 (train 지표 계산용)
     y_proba = model.predict_proba(X_test)[:, 1]
 
     # 6. 임계값 적용
@@ -193,10 +194,10 @@ def run_experiment(config: dict = None) -> dict:
         "f1": float(f1_score(y_test, y_pred, zero_division=0)),
     }
     # train 지표 추가 (과적합 검증 게이트용)
-    metrics["train_accuracy"] = float(np.mean(train_pred == y_train))
-    metrics["train_f1"] = float(f1_score(y_train, train_pred, zero_division=0))
-    metrics["train_precision"] = float(precision_score(y_train, train_pred, zero_division=0))
-    metrics["train_recall"] = float(recall_score(y_train, train_pred, zero_division=0))
+    metrics["train_accuracy"] = float(np.mean(train_pred == train_y_full))
+    metrics["train_f1"] = float(f1_score(train_y_full, train_pred, zero_division=0))
+    metrics["train_precision"] = float(precision_score(train_y_full, train_pred, zero_division=0))
+    metrics["train_recall"] = float(recall_score(train_y_full, train_pred, zero_division=0))
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     pr_prec, pr_rec, _ = precision_recall_curve(y_test, y_proba)
     metrics["roc_auc"] = float(auc(fpr, tpr))
