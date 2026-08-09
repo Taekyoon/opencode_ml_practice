@@ -64,11 +64,21 @@ def _prepare_data(task_id: str, **context):
 
 
 def _run_experiment(task_id: str, **context):
-    """task별 experiment_runner.py 를 subprocess 로 실행한다."""
+    """task별 experiment_runner.py 를 subprocess 로 실행한다.
+
+    실행 시작/완료/실패를 events 테이블에 기록한다 (실패도 기록 — 실패한 실험이
+    DB에 존재하지 않는 상태를 방지, J1 실행 이벤트 기록의 핵심).
+    """
     _guard(task_id, context)
     task = get_task(task_id)
     runner = os.path.join(PROJECT_ROOT, task.runner)
     results_dir = os.path.join(PROJECT_ROOT, task.results_dir)
+
+    from src.research_store import record_event
+
+    # 실패 시 사용할 임시 run_id (experiments 행과는 독립)
+    fail_run_id = f"{task_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    record_event(fail_run_id, "started", {"task_id": task_id, "runner": task.runner})
 
     proc = subprocess.run(
         [sys.executable, runner],
@@ -78,6 +88,15 @@ def _run_experiment(task_id: str, **context):
         timeout=300,
     )
     if proc.returncode != 0:
+        record_event(
+            fail_run_id,
+            "failed",
+            {
+                "task_id": task_id,
+                "returncode": proc.returncode,
+                "stderr_tail": proc.stderr[-500:],
+            },
+        )
         raise RuntimeError(f"{task_id} runner 실패:\n{proc.stdout}\n{proc.stderr}")
 
     run_dirs = sorted(
@@ -89,7 +108,9 @@ def _run_experiment(task_id: str, **context):
         reverse=True,
     )
     if not run_dirs:
-        raise FileNotFoundError(f"{task_id}: 실험 결과 폴더가 없습니다.")
+        error = f"{task_id}: 실험 결과 폴더가 없습니다."
+        record_event(fail_run_id, "failed", {"task_id": task_id, "error": error})
+        raise FileNotFoundError(error)
 
     latest = os.path.join(results_dir, run_dirs[0], "metrics.json")
     with open(latest, encoding="utf-8") as f:
@@ -101,6 +122,12 @@ def _run_experiment(task_id: str, **context):
     if os.path.exists(snap_path):
         with open(snap_path, encoding="utf-8") as f:
             snap_src = f.read()
+
+    record_event(
+        result["run_id"],
+        "completed",
+        {"task_id": task_id, "score": result.get("score")},
+    )
 
     context["task_instance"].xcom_push(key="run_result", value=result)
     context["task_instance"].xcom_push(key="runner_snapshot", value=snap_src)

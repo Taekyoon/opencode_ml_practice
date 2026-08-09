@@ -107,17 +107,22 @@ def run_experiment(config: dict = None) -> dict:
     model = _build_model(config.get("model_type", "ridge"), config.get("model_params", {}))
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
+    y_train_pred = model.predict(X_train)
 
     # 5. 평가
     train_time = round(time.time() - t0, 2)
     r2 = float(r2_score(y_test, y_pred))
     rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
     mae = float(mean_absolute_error(y_test, y_pred))
+    train_r2 = float(r2_score(y_train, y_train_pred))
+    train_rmse = float(np.sqrt(mean_squared_error(y_train, y_train_pred)))
 
     metrics = {
         "r2": r2,
         "rmse": rmse,
         "mae": mae,
+        "train_r2": train_r2,
+        "train_rmse": train_rmse,
         "n_train": int(len(X_train)),
         "n_test": int(len(X_test)),
         "target": target,

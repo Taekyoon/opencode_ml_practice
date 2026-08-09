@@ -160,6 +160,10 @@ def run_experiment(config: dict = None) -> dict:
     t0 = time.time()
     model = _build_model(config.get("model_type", "logistic"), config.get("model_params", {}))
     model.fit(X_train, y_train)
+    # train 지표는 여기서 계산 (이후 optimize_threshold 블록이 X_train을 재분할하므로 조기 확보)
+    train_proba = model.predict_proba(X_train)[:, 1]
+    train_threshold = config.get("threshold", 0.5)
+    train_pred = (train_proba >= train_threshold).astype(int)
     y_proba = model.predict_proba(X_test)[:, 1]
 
     # 6. 임계값 적용
@@ -188,6 +192,11 @@ def run_experiment(config: dict = None) -> dict:
         "recall": float(recall_score(y_test, y_pred, zero_division=0)),
         "f1": float(f1_score(y_test, y_pred, zero_division=0)),
     }
+    # train 지표 추가 (과적합 검증 게이트용)
+    metrics["train_accuracy"] = float(np.mean(train_pred == y_train))
+    metrics["train_f1"] = float(f1_score(y_train, train_pred, zero_division=0))
+    metrics["train_precision"] = float(precision_score(y_train, train_pred, zero_division=0))
+    metrics["train_recall"] = float(recall_score(y_train, train_pred, zero_division=0))
     fpr, tpr, _ = roc_curve(y_test, y_proba)
     pr_prec, pr_rec, _ = precision_recall_curve(y_test, y_proba)
     metrics["roc_auc"] = float(auc(fpr, tpr))

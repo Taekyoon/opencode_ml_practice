@@ -48,6 +48,14 @@ CREATE TABLE IF NOT EXISTS best_run (
     score REAL NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    detail TEXT
+);
 """
 
 
@@ -206,6 +214,62 @@ def get_all_experiments(task_id: str = None, limit: int = 50, db_path: str = DB_
         ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def record_event(run_id: str, event_type: str, detail: str = None, db_path: str = DB_PATH) -> int:
+    """실행 이벤트를 events 테이블에 기록한다.
+
+    event_type 예: 'started', 'completed', 'failed', 'gate_passed', 'gate_rejected'
+    detail은 에러 메시지/변경 근거 등 자유 문자열(JSON 직렬화 권장).
+    실패한 실행도 run_id가 임의 문자열이면 기록 가능하다 (experiments 행과 독립).
+    """
+    conn = get_conn(db_path)
+    cur = conn.execute(
+        "INSERT INTO events (run_id, event_type, timestamp, detail) VALUES (?, ?, ?, ?)",
+        (
+            run_id,
+            event_type,
+            datetime.now().isoformat(),
+            json.dumps(detail, ensure_ascii=False) if not isinstance(detail, str) and detail is not None else detail,
+        ),
+    )
+    conn.commit()
+    conn.close()
+    return cur.lastrowid
+
+
+def get_events(run_id: str, db_path: str = DB_PATH) -> list[dict]:
+    """특정 run의 이벤트 이력을 시간순으로 반환한다."""
+    conn = get_conn(db_path)
+    rows = conn.execute(
+        "SELECT * FROM events WHERE run_id=? ORDER BY id ASC", (run_id,)
+    ).fetchall()
+    conn.close()
+    evs = [dict(r) for r in rows]
+    for ev in evs:
+        if ev["detail"]:
+            try:
+                ev["detail"] = json.loads(ev["detail"])
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return evs
+
+
+def get_recent_events(limit: int = 50, db_path: str = DB_PATH) -> list[dict]:
+    """최근 이벤트를 최신순으로 반환한다."""
+    conn = get_conn(db_path)
+    rows = conn.execute(
+        "SELECT * FROM events ORDER BY id DESC LIMIT ?", (limit,)
+    ).fetchall()
+    conn.close()
+    evs = [dict(r) for r in rows]
+    for ev in evs:
+        if ev["detail"]:
+            try:
+                ev["detail"] = json.loads(ev["detail"])
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return evs
 
 
 def list_tasks_summary(db_path: str = DB_PATH) -> list[dict]:

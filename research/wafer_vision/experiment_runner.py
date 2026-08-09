@@ -185,6 +185,8 @@ def run_experiment(config: dict = None) -> dict:
     model.fit(X_tr, y_tr)
     y_prob = model.predict_proba(X_te)
     y_pred = model.predict(X_te)
+    y_tr_pred = model.predict(X_tr)
+    y_tr_prob = model.predict_proba(X_tr)
 
     # 3. 분류 평가 (멀지클래스)
     n_classes = len(le.classes_)
@@ -193,6 +195,17 @@ def run_experiment(config: dict = None) -> dict:
     macro_rec = float(recall_score(y_te, y_pred, average="macro", zero_division=0))
     macro_f1 = float(f1_score(y_te, y_pred, average="macro", zero_division=0))
 
+    # train 지표 추가 (과적합 검증 게이트용)
+    train_macro_f1 = float(f1_score(y_tr, y_tr_pred, average="macro", zero_division=0))
+    train_accuracy = float(accuracy_score(y_tr, y_tr_pred))
+    train_pr_aucs = []
+    for c in range(n_classes):
+        bin_yt = (y_tr == c).astype(int)
+        prec_t, rec_t, _ = precision_recall_curve(bin_yt, y_tr_prob[:, c])
+        if len(prec_t) < 2 or len(rec_t) < 2:
+            continue
+        train_pr_aucs.append(auc(rec_t, prec_t))
+    train_pr_auc = float(sum(train_pr_aucs) / len(train_pr_aucs)) if train_pr_aucs else 0.0
     pr_aucs = []
     for c in range(n_classes):
         bin_y = (y_te == c).astype(int)
@@ -240,6 +253,9 @@ def run_experiment(config: dict = None) -> dict:
         "macro_recall": round(macro_rec, 4),
         "macro_f1": round(macro_f1, 4),
         "pr_auc": round(pr_auc, 4),
+        "train_macro_f1": round(train_macro_f1, 4),
+        "train_accuracy": round(train_accuracy, 4),
+        "train_pr_auc": round(train_pr_auc, 4),
         "per_class": per_class,
         "label_distribution": dict(Counter(all_labels)),
         "n_features": int(X_tr.shape[1]),

@@ -35,7 +35,7 @@ opencode_ml_practice/
 │   ├── wiki/                    # 실험 기록 지식 베이스 (index/log/overview/tasks/techniques/...)
 │   ├── datasets/                # 등록된 dataset 저장소 (research.db 가 인덱스)
 │   ├── inbox/                   # 새 데이터 투입 폴더
-│   └── research.db              # dataset/실험 기록 SQLite
+│   └── research.db              # dataset/실험 기록 SQLite (experiments/best_run/events)
 ├── airflow/dags/ml_research_loop.py  # 자율 연구 루프 DAG (매일 자정)
 ├── src/data_manager.py         # dataset 등록/로드 API (+ text_col/img_col 지원)
 ├── src/text_processing.py      # 텍스트 토큰화 / TF-IDF 벡터라이저
@@ -43,7 +43,8 @@ opencode_ml_practice/
 ├── src/generate_wafer_images.py # 웨이퍼맵 합성 이미지 생성
 ├── src/wafer_data_loader.py    # WM-811K 공개 데이터셋 로더
 ├── src/generate_prompt_data.py # 프롬프트 합성 데이터 생성 (하드 케이스 포함)
-├── src/research_store.py       # 실험 기록/최고 점수 API
+├── src/validation_gate.py      # 실험 결과 검증 게이트 (GateResult + 규칙)
+├── src/research_store.py       # 실험 기록/최고 점수/이벤트 API
 └── Makefile                    # 운영 명령 모음
 ```
 
@@ -79,7 +80,7 @@ airflow dags show ml_research_loop                 # 새 태스크 4개 태스�
 | 항목 | 역할 |
 |------|------|
 | `experiment_runner.py` | 단일 파이프라인. `python research/<task_id>/experiment_runner.py` 로 실행 |
-| `get_config()` | 하이퍼파라미터를 이 dict에 담음 (에이전트 튜닝 지점) |
+| `get_config()` | 하이퍼파라미터를 이 dict에 담음 (에이전트 튜닝 지점). `_` 접두 메타 키(예: `_rationale`)로 변경 근거를 남길 수 있다 — `run_experiment()`는 `_`로 시작하는 키를 모델 파라미터로 사용하지 않고 config에 보존한다 |
 | `run_experiment()` | 데이터 로드→전처리→학습→평가, `{"config","metrics","score","kind"}` 반환 |
 | `_run_and_save()` | 결과를 `results/run_<id>/metrics.json` + `runner_snapshot.py` 로 저장 |
 | `program.md` | 사람이 연구 방향/평가 지표 작성 |
@@ -111,7 +112,7 @@ python -m src.data_manager
 ## 7. 이 프로젝트에서 코딩할 때
 
 - 기존 스타일 유지: 결과 `json` 저장, `research.db` 기록은 `src.research_store` 사용
-- 에이전트(ml-researcher)의 튜닝은 `get_config()`를 수정하는 방식으로만 함
+- 에이전트(ml-researcher)의 튜닝은 `get_config()`를 수정하는 방식으로만 함 — 변경 시 `_rationale`에 근거를 남기고, 게이트(`src.validation_gate`)를 통과하기 전에는 best로 승격하지 않는다
 - 다른 태스크의 runner를 복제하지 않고, 새 스킬/새 태스크가 필요하면 스캐폴드를 사용
 
 ## 8. 커밋 시 유의
@@ -223,4 +224,10 @@ research/wiki/
 - 모듈 I(이미지 AI, I1~I3)도 **선택 심화** — 웨이퍼맵 이미지 분류에 관심이 있으면
   B7(26)·B8(27)을 먼저 들은 뒤 진행한다. `research/wafer_vision/` 태스크와
   `wafer-vision` 에이전트가 실습 대상이다
+- 모듈 J(에이전트 발전 심화, J1~J3)는 **최상위 선택 심화** — F 수료 + C/D/E 이수 후 진행한다.
+  Shepherd/SkillOpt 등 에이전트 프레임워크의 개념을 이 프로젝트 구조에 적용해
+  "에이전트를 발전시키는 법"을 다룬다. 실습 대상은 `research.db` `events` 테이블,
+  러너의 `train_*` 지표, `src/validation_gate.py`, `airflow/dags/ml_research_loop.py`의 이벤트 기록이다.
+  참고: Shepherd/SkillOpt는 **개념만 차용**하며 설치·런타임 의존성이 아니다
+  (실증 로그는 `docs/design/INSTALL_LOG.md`)
 - 수료 후엔 일반 개발 모드로 복귀한다
