@@ -76,4 +76,4 @@ cat research/wiki/tasks/failure_prediction.md   # 위키에 자동 기록
 ```
 
 ## 다음 레슨
-[F1. 나만의 태스크](../F_capstone/19_your_own_task.md) — 배운 모든 것을 종합해 나만의 태스크를 만든다.
+[F1. 나만의 태스크](../F_capstone/21_your_own_task.md) — 배운 모든 것을 종합해 나만의 태스크를 만든다.

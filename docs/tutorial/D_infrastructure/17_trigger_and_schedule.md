@@ -78,4 +78,4 @@ make research
 ```
 
 ## 다음 레슨
-[모듈 E 시작하기](../E_ai_automation/16_opencode_agents.md) — 이제 모든 것을 결합한다.
+[모듈 E 시작하기](../E_ai_automation/18_opencode_agents.md) — 이제 모든 것을 결합한다.

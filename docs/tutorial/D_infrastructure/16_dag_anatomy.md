@@ -93,4 +93,4 @@ ml_research_loop.py를 읽고 이 DAG가 하는 전체 일을 한 그림으로
 ```
 
 ## 다음 레슨
-[D3. 트리거와 스케줄](15_trigger_and_schedule.md) — 실제로 DAG를 실행해본다.
+[D3. 트리거와 스케줄](17_trigger_and_schedule.md) — 실제로 DAG를 실행해본다.

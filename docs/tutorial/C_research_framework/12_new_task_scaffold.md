@@ -93,4 +93,4 @@ scripts/new_task.py의 오류 처리(검증) 단계들을 정리해줘.
 ```
 
 ## 다음 레슨
-[C3. 위키 지식 베이스](11_wiki_knowledge_base.md) — 실험에서 발견한 것을 기록하는 곳.
+[C3. 위키 지식 베이스](13_wiki_knowledge_base.md) — 실험에서 발견한 것을 기록하는 곳.

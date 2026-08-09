@@ -79,6 +79,15 @@ TASKS = {
         results_dir="research/quality_regression/results",
         description="제품 두께(thickness) 예측 (회귀)",
     ),
+    "prompt_guard": ExperimentTask(
+        id="prompt_guard",
+        kind="classification",
+        score_name="score",           # F1(macro) × PR-AUC
+        runner="research/prompt_guard/experiment_runner.py",
+        program="research/prompt_guard/program.md",
+        results_dir="research/prompt_guard/results",
+        description="프롬프트 공격 탐지 가드레일 (텍스트 다중 분류)",
+    ),
 }
 
 

@@ -34,9 +34,20 @@ CREATE TABLE IF NOT EXISTS datasets (
     n_rows INTEGER NOT NULL,
     failure_rate REAL,
     registered_at TEXT NOT NULL,
-    note TEXT
+    note TEXT,
+    text_col TEXT
 );
 """
+
+_MIGRATION_TEXT_COL = "ALTER TABLE datasets ADD COLUMN text_col TEXT"
+
+
+def _migrate_schema(conn):
+    """기존 DB에 신규 컬럼(text_col)이 없는 경우 추가한다."""
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(datasets)").fetchall()}
+    if "text_col" not in cols:
+        conn.execute(_MIGRATION_TEXT_COL)
+        conn.commit()
 
 
 def _conn():
@@ -44,6 +55,7 @@ def _conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.executescript(DATASET_SCHEMA)
+    _migrate_schema(conn)
     return conn
 
 
@@ -86,8 +98,13 @@ def register_file(
     target_col: str = None,
     note: str = None,
     name: str = None,
+    text_col: str = None,
 ) -> dict:
-    """inbox 의 데이터 파일을 등록한다."""
+    """inbox 의 데이터 파일을 등록한다.
+
+    text_col 은 텍스트 분류 태스크용으로, 데이터의 "본문(프롬프트)" 컬럼을 지정한다.
+    텍스트가 아닌 일반 수치 태스크에서는 쓰지 않아도 된다.
+    """
     src = os.path.join(INBOX_DIR, filename)
     if not os.path.isfile(src):
         raise FileNotFoundError(f"{src} 없음")
@@ -98,6 +115,10 @@ def register_file(
         target_col = _guess_target(df)
     if target_col is not None and target_col not in df.columns:
         raise ValueError(f"target '{target_col}' 이 데이터에 없습니다. 컬럼: {list(df.columns)}")
+    if text_col is not None and text_col not in df.columns:
+        raise ValueError(f"text_col '{text_col}' 이 데이터에 없습니다. 컬럼: {list(df.columns)}")
+    if text_col is not None and text_col == target_col:
+        raise ValueError("text_col 과 target_col 은 같을 수 없습니다.")
 
     ds_name = _unique_name(name or _safe_name(filename))
     dest_dir = os.path.join(DATASET_DIR, ds_name)
@@ -113,8 +134,8 @@ def register_file(
     conn = _conn()
     conn.execute(
         """
-        INSERT INTO datasets (name, source_file, target_col, feature_cols, n_rows, failure_rate, registered_at, note)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO datasets (name, source_file, target_col, feature_cols, n_rows, failure_rate, registered_at, note, text_col)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             ds_name,
@@ -125,6 +146,7 @@ def register_file(
             failure_rate,
             datetime.now().isoformat(),
             note,
+            text_col,
         ),
     )
     conn.commit()
@@ -134,6 +156,7 @@ def register_file(
     return {
         "name": ds_name,
         "target_col": target_col,
+        "text_col": text_col,
         "feature_cols": feature_cols,
         "n_rows": int(len(df)),
         "failure_rate": failure_rate,

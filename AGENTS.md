@@ -22,12 +22,19 @@ opencode_ml_practice/
 │   │   ├── program.md           # 연구 지침서
 │   │   └── results/
 │   ├── quality_regression/      # 빌트인 회귀 태스크
+│   ├── prompt_guard/            # 프롬프트 가드레일 태스크 (텍스트 다중 분류, 튜토리얼 모듈 G)
+│   │   ├── experiment_runner.py # 텍스트 분류 파이프라인 (TF-IDF + 분류기)
+│   │   ├── program.md           # 지침서
+│   │   ├── predict.py           # 학습 모델로 실시간 프롬프트 판별 API
+│   │   └── results/
 │   ├── wiki/                    # 실험 기록 지식 베이스 (index/log/overview/tasks/techniques/...)
 │   ├── datasets/                # 등록된 dataset 저장소 (research.db 가 인덱스)
 │   ├── inbox/                   # 새 데이터 투입 폴더
 │   └── research.db              # dataset/실험 기록 SQLite
 ├── airflow/dags/ml_research_loop.py  # 자율 연구 루프 DAG (매일 자정)
-├── src/data_manager.py         # dataset 등록/로드 API
+├── src/data_manager.py         # dataset 등록/로드 API (+ text_col 지원)
+├── src/text_processing.py      # 텍스트 토큰화 / TF-IDF 벡터라이저
+├── src/generate_prompt_data.py # 프롬프트 합성 데이터 생성 (하드 케이스 포함)
 ├── src/research_store.py       # 실험 기록/최고 점수 API
 └── Makefile                    # 운영 명령 모음
 ```
@@ -203,4 +210,6 @@ research/wiki/
 ### 10.6 수료 기준
 
 - 모듈 F(F1 종합 프로젝트) 완료 = 튜토리얼 수료
+- 모듈 G(AI 가드레일, G1~G4)는 **선택 심화** — 수료 후 LLM 안전/프롬프트 분류에 관심이
+  있으면 이어서 진행한다. `research/prompt_guard/` 태스크와 `prompt-guard` 에이전트가 실습 대상이다
 - 수료 후엔 일반 개발 모드로 복귀한다

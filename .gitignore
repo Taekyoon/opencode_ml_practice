@@ -50,3 +50,6 @@ results/
 .idea/
 .vscode/
 *.swp
+# 프롬프트 가드레일 (학습 산출물)
+research/prompt_guard/models/
+research/**/models/

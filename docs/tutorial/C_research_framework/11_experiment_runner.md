@@ -76,4 +76,4 @@ research/failure_prediction/experiment_runner.py를 읽고,
 ```
 
 ## 다음 레슨
-[C2. 새 태스크 만들기](10_new_task_scaffold.md) — 스캐폴드 CLI로 새 태스크를 추가한다.
+[C2. 새 태스크 만들기](12_new_task_scaffold.md) — 스캐폴드 CLI로 새 태스크를 추가한다.

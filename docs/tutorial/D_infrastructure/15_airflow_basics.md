@@ -73,4 +73,4 @@ airflow dags list 명령으로 어떤 DAG가 있는지 확인해줘.
 ```
 
 ## 다음 레슨
-[D2. DAG 해부](14_dag_anatomy.md) — `ml_research_loop` DAG를 뜯어본다.
+[D2. DAG 해부](16_dag_anatomy.md) — `ml_research_loop` DAG를 뜯어본다.
