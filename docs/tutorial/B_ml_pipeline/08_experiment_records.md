@@ -100,4 +100,4 @@ research/research.db 의 스키마를 설명하고, experiments와 best_run의 �
 ```
 
 ## 다음 레슨
-[모듈 C 시작하기](../C_research_framework/09_experiment_runner.md) — 이 모든 것을 `experiment_runner.py` 하나로 자동화한다.
+[B5. 텍스트 데이터](09_text_prompt.md) — 이번엔 수치가 아닌 문장 데이터를 다뤄본다.

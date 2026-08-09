@@ -19,7 +19,7 @@
 
 ---
 
-## 튜토리얼 목록 (19개 레슨)
+## 튜토리얼 목록 (25개 레슨)
 
 ### 모듈 A : 기초 다지기 (무엇을, 왜 배우나)
 
@@ -38,37 +38,50 @@
 | [B2](B_ml_pipeline/06_model_training.md) | 모델 학습 | 로지스틱 회귀, train/test | 20분 |
 | [B3](B_ml_pipeline/07_evaluation_metrics.md) | 평가 지표 | F1, AUC-ROC, PR-AUC | 20분 |
 | [B4](B_ml_pipeline/08_experiment_records.md) | 실험 기록 | SQLite, best_run | 15분 |
+| [B5](B_ml_pipeline/09_text_prompt.md) | 텍스트 데이터 | 문장 데이터, 프롬프트 데이터셋 | 20분 |
+| [B6](B_ml_pipeline/10_text_classification.md) | 텍스트 분류 | TF-IDF, 텍스트 분류 러너 | 25분 |
 
 ### 모듈 C: 자율 연구 프레임워크 (AI가 실험하는 법)
 
 | 레슨 | 제목 | 배우는 것 | 시간 |
 |------|------|----------|------|
-| [C1](C_research_framework/09_experiment_runner.md) | 실험 runner | experiment_runner.py, get_config | 20분 |
-| [C2](C_research_framework/10_new_task_scaffold.md) | 새 태스크 만들기 | new_task.py, 스캐폴드 | 15분 |
-| [C3](C_research_framework/11_wiki_knowledge_base.md) | 위키 지식 베이스 | LLM Wiki 패턴 | 20분 |
-| [C4](C_research_framework/12_wiki_lint.md) | 위키 검진 | wiki_lint.py | 10분 |
+| [C1](C_research_framework/11_experiment_runner.md) | 실험 runner | experiment_runner.py, get_config | 20분 |
+| [C2](C_research_framework/12_new_task_scaffold.md) | 새 태스크 만들기 | new_task.py, 스캐폴드 | 15분 |
+| [C3](C_research_framework/13_wiki_knowledge_base.md) | 위키 지식 베이스 | LLM Wiki 패턴 | 20분 |
+| [C4](C_research_framework/14_wiki_lint.md) | 위키 검진 | wiki_lint.py | 10분 |
 
 ### 모듈 D: Airflow + 운영 (자동화 인프라)
 
 | 레슨 | 제목 | 배우는 것 | 시간 |
 |------|------|----------|------|
-| [D1](D_infrastructure/13_airflow_basics.md) | Airflow 기초 | DAG, 태스트, Operator | 15분 |
-| [D2](D_infrastructure/14_dag_anatomy.md) | DAG 해부 | ml_research_loop.py | 20분 |
-| [D3](D_infrastructure/15_trigger_and_schedule.md) | 트리거/스케줄 | Airflow 실행, make | 15분 |
+| [D1](D_infrastructure/15_airflow_basics.md) | Airflow 기초 | DAG, 태스트, Operator | 15분 |
+| [D2](D_infrastructure/16_dag_anatomy.md) | DAG 해부 | ml_research_loop.py | 20분 |
+| [D3](D_infrastructure/17_trigger_and_schedule.md) | 트리거/스케줄 | Airflow 실행, make | 15분 |
 
 ### 모듈 E — AI 자동화 (에이전트가 실험을 개선)
 
 | 레슨 | 제목 | 배우는 것 | 시간 |
 |------|------|----------|------|
-| [E1](E_ai_automation/16_opencode_agents.md) | opencode 에이전트 | ml-researcher, 도구 | 15분 |
-| [E2](E_ai_automation/17_creating_skills.md) | 스킬 만들기 | imbalanced-data-specialist | 20분 |
-| [E3](E_ai_automation/18_autonomous_research_loop.md) | 자율 연구 루프 | DAG + runner + 위키 | 20분 |
+| [E1](E_ai_automation/18_opencode_agents.md) | opencode 에이전트 | ml-researcher, 도구 | 15분 |
+| [E2](E_ai_automation/19_creating_skills.md) | 스킬 만들기 | imbalanced-data-specialist | 20분 |
+| [E3](E_ai_automation/20_autonomous_research_loop.md) | 자율 연구 루프 | DAG + runner + 위키 | 20분 |
 
 ### 모듈 F — 종합 프로젝트 (배운 것을 합치다)
 
 | 레슨 | 제목 | 배우는 것 | 시간 |
 |------|------|----------|------|
-| [F1](F_capstone/19_your_own_task.md) | 나만의 태스크 | 전체 사이클 종합 | 20분 |
+| [F1](F_capstone/21_your_own_task.md) | 나만의 태스크 | 전체 사이클 종합 | 20분 |
+
+### 모듈 G — AI 가드레일 (선택 심화: LLM 안전)
+
+| 레슨 | 제목 | 배우는 것 | 시간 |
+|------|------|----------|------|
+| [G1](G_ai_safety/22_prompt_guards.md) | 프롬프트 공격 이해 | 인젝션·탈취·조작 등 위협 | 15분 |
+| [G2](G_ai_safety/23_building_guardrail.md) | 가드레일 성능 | 오탐/오탐, threshold 튜닝 | 25분 |
+| [G3](G_ai_safety/24_agent_integration.md) | 가드레일 에이전트 | predict.py, prompt-guard | 15분 |
+| [G4](G_ai_safety/25_own_guardrail.md) | 나만의 가드레일 | 자유 확장 & 마무리 | 20분 |
+
+> 모듈 **F** 완료 = 튜토리얼 수료. 모듈 **G**는 수료 후에 듣는 선택 심화(LLM 안전)입니다.
 
 ---
 

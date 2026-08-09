@@ -74,4 +74,4 @@ research/wiki 의 overview.md와 tasks/failure_prediction.md를 읽고,
 ```
 
 ## 다음 레슨
-[C4. 위키 검진](12_wiki_lint.md) — 위키가 상식적으로 유지되는지 자동 검사한다.
+[C4. 위키 검진](14_wiki_lint.md) — 위키가 상식적으로 유지되는지 자동 검사한다.

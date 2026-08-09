@@ -84,6 +84,9 @@ make wiki-lint
 DAG가 돌고, 위키에 기록되고, 내일 열어보면 리포트가 있다.
 **이 프로젝트는 여러분의 것이 된다.**
 
+튜토리얼을 수료했다면 이제 선택 심화 모듈 **G. AI 가드레일**이 기다린다.
+LLM 서비스에 안전장치(가드레일)를 붙이는 법을 배워보자.
+
 ## 마무리 확인 문제
 
 1. 새 태스크를 "분류"로 판정받으려면 target 컬럼 값은 몇 종류여야 하는가?
@@ -102,7 +105,8 @@ DAG가 돌고, 위키에 기록되고, 내일 열어보면 리포트가 있다.
 ### (참고) 전체 모듈 복습 목차
 - [모듈 A](../A_foundation/01_environment_setup.md)
 - [모듈 B](../B_ml_pipeline/05_preprocessing.md)
-- [모듈 C](../C_research_framework/09_experiment_runner.md)
-- [모듈 D](../D_infrastructure/13_airflow_basics.md)
-- [모듈 E](../E_ai_automation/16_opencode_agents.md)
+- [모듈 C](../C_research_framework/11_experiment_runner.md)
+- [모듈 D](../D_infrastructure/15_airflow_basics.md)
+- [모듈 E](../E_ai_automation/18_opencode_agents.md)
+- [모듈 G (선택 심화)](../G_ai_safety/22_prompt_guards.md)
 - [처음으로](../README.md)

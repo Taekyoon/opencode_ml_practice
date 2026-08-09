@@ -115,4 +115,4 @@ rm -rf .opencode/skills/eda-snapshot
 ```
 
 ## 다음 레슨
-[E3. 자율 연구 루프](18_autonomous_research_loop.md) — DAG+runner+위키+에이전트가 결합한다.
+[E3. 자율 연구 루프](20_autonomous_research_loop.md) — DAG+runner+위키+에이전트가 결합한다.

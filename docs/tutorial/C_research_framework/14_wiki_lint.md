@@ -72,4 +72,4 @@ scripts/wiki_lint.py의 고아 페이지 검사를 실행으로 수행해보고,
 ```
 
 ## 다음 레슨
-[모듈 D 시작하기](../D_infrastructure/13_airflow_basics.md) — Airflow로 실행을 자동화한다.
+[모듈 D 시작하기](../D_infrastructure/15_airflow_basics.md) — Airflow로 실행을 자동화한다.
