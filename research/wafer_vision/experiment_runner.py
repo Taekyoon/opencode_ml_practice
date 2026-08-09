@@ -63,7 +63,12 @@ def get_config() -> dict:
 # [에이전트 수정 영역] - 데이터 로드
 # ============================================================================
 def _load_data(config: dict) -> tuple:
-    """(images, labels) 반환. images: (N, size, size) uint8, labels: 문자열 배열."""
+    """이미지/라벨 반환. 합성은 (images, labels).
+
+    wm811k 에서 trianTestLabel(공식 split)를 사용할 수 있으면
+    (X_train, y_train, X_test, y_test, info) 5-튜플로 반환한다 — 이때 내부
+    train_test_split 은 건너뛴다.
+    """
     import numpy as np
 
     size = config.get("size", 32)
@@ -71,7 +76,15 @@ def _load_data(config: dict) -> tuple:
     if config.get("data_source") == "wm811k":
         from src.wafer_data_loader import load_wm811k
 
-        images, labels, info = load_wm811k(size=size, labeled_only=True)
+        data = load_wm811k(
+            size=size,
+            labeled_only=True,
+            max_samples=config.get("max_samples"),
+            use_trian_split=config.get("use_trian_split", True),
+        )
+        if len(data) == 5:  # (X_tr, y_tr, X_te, y_te, info)
+            return data
+        images, labels, _ = data
         return images, labels
 
     from src.generate_wafer_images import generate_synthetic_wafers
@@ -133,26 +146,37 @@ def run_experiment(config: dict = None) -> dict:
                                  precision_score, recall_score, roc_auc_score)
     from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import LabelEncoder
+    import numpy as np
 
     if config is None:
         config = copy.deepcopy(get_config())
 
     t0 = time.time()
-    images, labels = _load_data(config)
+    data = _load_data(config)
     seed = config.get("seed", 42)
     task = config.get("task", "classification")
 
+    pre_split = isinstance(data, tuple) and len(data) == 5
+    if pre_split:
+        X_tr_img, y_tr, X_te_img, y_te, load_info = data
+        all_labels = np.concatenate([y_tr, y_te])
+    else:
+        images, labels, load_info = (*data, None)
+        all_labels = labels
+        X_tr_img, X_te_img, y_tr, y_te = train_test_split(
+            images, labels, test_size=0.2, stratify=labels, random_state=seed
+        )
+
     # 라벨 인코딩 (문자열 → 0..n-1)
     le = LabelEncoder()
-    y = le.fit_transform(labels)
+    le = le.fit(all_labels)
+    y_tr = le.transform(y_tr)
+    y_te = le.transform(y_te)
 
     # 1. 특성 추출 (flatten → PCA → 그래디언트 → 방사) — train에만 fit
     from src.image_processing import feature_pipeline, transform_features
 
     feat_cfg = config.get("feature", {})
-    X_tr_img, X_te_img, y_tr, y_te = train_test_split(
-        images, y, test_size=0.2, stratify=y, random_state=seed
-    )
     X_tr, pca = feature_pipeline(X_tr_img, feat_cfg)
     X_te = transform_features(X_te_img, pca, feat_cfg)
 
@@ -217,7 +241,7 @@ def run_experiment(config: dict = None) -> dict:
         "macro_f1": round(macro_f1, 4),
         "pr_auc": round(pr_auc, 4),
         "per_class": per_class,
-        "label_distribution": dict(Counter(labels)),
+        "label_distribution": dict(Counter(all_labels)),
         "n_features": int(X_tr.shape[1]),
         "n_train": int(len(X_tr)),
         "n_test": int(len(X_te)),
