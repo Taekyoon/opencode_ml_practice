@@ -3,7 +3,7 @@
 > 실험/개발 기록의 내용 중심 목록. 카테고리별 페이지와 한 줄 요약.
 > 이 파일은 모든 실험(ingest) 후 갱신된다.
 
-최종 갱신: 2026-08-08
+최종 갱신: 2026-08-09
 
 ## System (특수 파일)
 
@@ -15,16 +15,19 @@
 
 - [tasks/failure_prediction.md](tasks/failure_prediction.md) — 분류 태스크 누적 발견 (현재 베이스라인 score=0.7912)
 - [tasks/quality_regression.md](tasks/quality_regression.md) — 회귀 태스크 누적 발견 (현재 베이스라인 R²=0.9822)
+- [tasks/wafer_vision.md](tasks/wafer_vision.md) — 웨이퍼맵 결함 분류/이상탐지 (score=0.2369, WM-811K 실데이터)
 
 ## Techniques (기법별 종합)
 
 - [techniques/baseline.md](techniques/baseline.md) — 현재 베이스라인 구성 (logistic/ridge + StandardScaler)
 - [techniques/imbalance_handling.md](techniques/imbalance_handling.md) — 불균형 처리 기법 계획 (SMOTE 등 미시험)
 - [techniques/model_comparison.md](techniques/model_comparison.md) — 모델별 비교 (아직 미시험)
+- [techniques/anomaly_detection.md](techniques/anomaly_detection.md) — 이상탐지 (IsolationForest, ROC-AUC 0.785@wafer_vision)
 
 ## Datasets (데이터셋)
 
 - [datasets/lab_sensor_data.md](datasets/lab_sensor_data.md) — 5,000행, failure 비율 16.98%, 특성 8개
+- [datasets/wm811k.md](datasets/wm811k.md) — WM-811K 웨이퍼맵, 811,457행 (라벨 172,950)
 
 ## Synthesis (교차 종합)
 

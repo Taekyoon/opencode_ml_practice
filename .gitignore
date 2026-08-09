@@ -16,6 +16,8 @@ env/
 
 # 데이터/산출물 (대용량)
 data/*.csv
+data/*.npz
+data/WM811K/
 plots/*.png
 
 # 로그/실험 기록

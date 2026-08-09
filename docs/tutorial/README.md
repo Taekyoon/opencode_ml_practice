@@ -19,7 +19,7 @@
 
 ---
 
-## 튜토리얼 목록 (25개 레슨)
+## 튜토리얼 목록 (30개 레슨)
 
 ### 모듈 A : 기초 다지기 (무엇을, 왜 배우나)
 
@@ -40,6 +40,8 @@
 | [B4](B_ml_pipeline/08_experiment_records.md) | 실험 기록 | SQLite, best_run | 15분 |
 | [B5](B_ml_pipeline/09_text_prompt.md) | 텍스트 데이터 | 문장 데이터, 프롬프트 데이터셋 | 20분 |
 | [B6](B_ml_pipeline/10_text_classification.md) | 텍스트 분류 | TF-IDF, 텍스트 분류 러너 | 25분 |
+| [B7](B_ml_pipeline/26_wafer_images.md) | 웨이퍼 이미지 | 합성 웨이퍼맵, 이미지 데이터 | 20분 |
+| [B8](B_ml_pipeline/27_wafer_classification.md) | 이미지 분류 | flatten/PCA, 이미지 분류 러너 | 25분 |
 
 ### 모듈 C: 자율 연구 프레임워크 (AI가 실험하는 법)
 
@@ -82,6 +84,17 @@
 | [G4](G_ai_safety/25_own_guardrail.md) | 나만의 가드레일 | 자유 확장 & 마무리 | 20분 |
 
 > 모듈 **F** 완료 = 튜토리얼 수료. 모듈 **G**는 수료 후에 듣는 선택 심화(LLM 안전)입니다.
+
+### 모듈 I — 이미지 AI (선택 심화: 웨이퍼 비전)
+
+| 레슨 | 제목 | 배우는 것 | 시간 |
+|------|------|----------|------|
+| [I1](I_image_ai/28_anomaly_detection.md) | 이상탐지 | 정상/비정상, ROC-AUC | 20분 |
+| [I2](I_image_ai/29_feature_engineering.md) | 특징 공학 | PCA/그래디언트/방사 프로파일 | 25분 |
+| [I3](I_image_ai/30_own_vision_task.md) | 나만의 비전 태스크 | 분류+이상탐지 자유 확장 | 20분 |
+
+> **I** 모듈은 **B7/B8**(웨이퍼 이미지·분류)을 먼저 들은 뒤 추천합니다. 이미지 AI에
+> 관심이 있다면 B7/B8 → I1 → I2 → I3 순서로 진행하세요.
 
 ---
 

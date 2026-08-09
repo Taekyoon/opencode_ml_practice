@@ -27,13 +27,21 @@ opencode_ml_practice/
 │   │   ├── program.md           # 지침서
 │   │   ├── predict.py           # 학습 모델로 실시간 프롬프트 판별 API
 │   │   └── results/
+│   ├── wafer_vision/            # 웨이퍼맵 결함 태스크 (이미지 분류, 튜토리얼 B8/I)
+│   │   ├── experiment_runner.py # 이미지 파이프라인 (flatten+PCA+그래디언트+방사)
+│   │   ├── program.md           # 지침서
+│   │   ├── predict.py           # 학습 모델로 웨이퍼맵 결함 판별 API
+│   │   └── results/
 │   ├── wiki/                    # 실험 기록 지식 베이스 (index/log/overview/tasks/techniques/...)
 │   ├── datasets/                # 등록된 dataset 저장소 (research.db 가 인덱스)
 │   ├── inbox/                   # 새 데이터 투입 폴더
 │   └── research.db              # dataset/실험 기록 SQLite
 ├── airflow/dags/ml_research_loop.py  # 자율 연구 루프 DAG (매일 자정)
-├── src/data_manager.py         # dataset 등록/로드 API (+ text_col 지원)
+├── src/data_manager.py         # dataset 등록/로드 API (+ text_col/img_col 지원)
 ├── src/text_processing.py      # 텍스트 토큰화 / TF-IDF 벡터라이저
+├── src/image_processing.py     # 웨이퍼맵 특징 추출 (flatten/PCA/그래디언트/방사)
+├── src/generate_wafer_images.py # 웨이퍼맵 합성 이미지 생성
+├── src/wafer_data_loader.py    # WM-811K 공개 데이터셋 로더
 ├── src/generate_prompt_data.py # 프롬프트 합성 데이터 생성 (하드 케이스 포함)
 ├── src/research_store.py       # 실험 기록/최고 점수 API
 └── Makefile                    # 운영 명령 모음
@@ -212,4 +220,7 @@ research/wiki/
 - 모듈 F(F1 종합 프로젝트) 완료 = 튜토리얼 수료
 - 모듈 G(AI 가드레일, G1~G4)는 **선택 심화** — 수료 후 LLM 안전/프롬프트 분류에 관심이
   있으면 이어서 진행한다. `research/prompt_guard/` 태스크와 `prompt-guard` 에이전트가 실습 대상이다
+- 모듈 I(이미지 AI, I1~I3)도 **선택 심화** — 웨이퍼맵 이미지 분류에 관심이 있으면
+  B7(26)·B8(27)을 먼저 들은 뒤 진행한다. `research/wafer_vision/` 태스크와
+  `wafer-vision` 에이전트가 실습 대상이다
 - 수료 후엔 일반 개발 모드로 복귀한다

@@ -88,6 +88,15 @@ TASKS = {
         results_dir="research/prompt_guard/results",
         description="프롬프트 공격 탐지 가드레일 (텍스트 다중 분류)",
     ),
+    "wafer_vision": ExperimentTask(
+        id="wafer_vision",
+        kind="classification",
+        score_name="score",           # F1(macro) × PR-AUC (이상탐지 ROC-AUC 보조)
+        runner="research/wafer_vision/experiment_runner.py",
+        program="research/wafer_vision/program.md",
+        results_dir="research/wafer_vision/results",
+        description="웨이퍼맵 결함 분류 (이미지, 합성/WM-811K)",
+    ),
 }
 
 
