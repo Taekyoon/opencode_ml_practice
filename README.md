@@ -71,6 +71,7 @@ opencode_ml_practice/
 ├── scripts/                # new_task 스캐폴드 CLI, wiki_lint 검진
 ├── docs/tutorial/          # 대화형 튜토리얼 본체 (A~I 모듈)
 ├── .opencode/              # OpenCode 에이전트 / 스킬 정의
+├── archive/                # 보존된 레거시 코드/문서 (아래 "보존 아카이브" 참조)
 ├── AGENTS.md               # AI 에이전트 작업 가이드 (필수)
 └── Makefile                # make init / scheduler / research / wiki-lint 등
 ```
@@ -102,6 +103,21 @@ make wiki-lint                               # 위키 지식 베이스 건강 �
 
 > 실제 산업 데이터가 아닌 **학습용 합성 데이터**입니다.
 > 실습 구조는 실제 반도체 품질 분석과 동일한 파이프라인(특성 공학·불균형 대응 가능)을 따릅니다.
+
+## 🗄️ 보존 아카이브 (archive/)
+
+한때 사용하던 초기 실험 코드와 기록 문서를 삭제하지 않고 `archive/`에 보존한다.
+읽기 전용이며, 새 기능은 여기에 넣지 않는다. 운영 표준은 `research/<task_id>/`
+태스크 프레임워크와 `airflow/dags/ml_research_loop.py` 자율 연구 루프이다.
+
+| 경로 | 내용 | 대체 |
+|------|------|------|
+| `archive/code/experiments/` | 초기 실험 스위트 (`run_baseline/run_imbalance/run_extreme/run_scalability`) | `research/<task>/experiment_runner.py` |
+| `archive/code/semiconductor_experiments_dag.py` | 4개 실험을 병렬 실행하던 Airflow DAG | `airflow/dags/ml_research_loop.py` |
+| `archive/docs/` | 초기 대화 로그, 전략, 스킬 계획, 회고록 | `research/wiki/` (지식 표준) |
+
+- 실행 산출물(`archive/code/experiments/results/`, `summary.json`)은 보존만 하며 git에는 추적하지 않는다.
+- `make archive` 로 보존 파일 목록 확인, 상세는 [archive/README.md](archive/README.md)
 
 ## 📚 참고
 
