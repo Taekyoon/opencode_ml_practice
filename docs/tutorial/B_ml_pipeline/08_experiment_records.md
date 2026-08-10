@@ -47,7 +47,10 @@ python -m src.research_store
 출력 예:
 ```
 등록된 태스크별 요약:
-  failure_prediction: 1회 실험, 최고 score=0.7912
+  failure_prediction: 8회 실험, 최고 score=0.7912
+  prompt_guard: 1회 실험, 최고 score=1.0
+  quality_regression: 6회 실험, 최고 score=0.9822
+  wafer_vision: 1회 실험, 최고 score=0.8357
 ```
 
 ### 3단계: dataset/experiments API 직접 쓰기

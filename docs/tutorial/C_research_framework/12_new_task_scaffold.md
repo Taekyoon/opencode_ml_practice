@@ -32,9 +32,9 @@ python research/tasks_registry.py
 ```
 [research] 등록된 태스크:
   failure_prediction: 반도체 failure 예측 (분류, 불균형 대응) (score=score)
+  prompt_guard: 프롬프트 공격 탐지 가드레일 (텍스트 다중 분류) (score=score)
   quality_regression: 제품 두께(thickness) 예측 (회귀) (score=r2)
-  prompt_guard: 프롬프트 공격 탐지 가드레일 (분류) (score=score)
-  wafer_vision: 웨이퍼맵 결함 분류 (분류) (score=score)
+  wafer_vision: 웨이퍼맵 결함 분류 (이미지, 합성/WM-811K) (score=score)
 ```
 
 ### 2단계: 스캐폴드 지침 읽기
