@@ -7,3 +7,7 @@
 ## [2026-08-09] ingest | failure_prediction | run_20260809_090033 | score=0.7912
 ## [2026-08-09] ingest | quality_regression | run_20260809_090044 | score=0.9822
 ## [2026-08-09] ingest | wafer_vision | run_20260809_145944 | score=0.2369 (WM-811K 실데이터 첫 실행)
+## [2026-08-10] ingest | failure_prediction | run_20260810_090031 | score=0.7912
+## [2026-08-10] ingest | prompt_guard | run_20260810_090036 | score=1.0
+## [2026-08-10] ingest | quality_regression | run_20260810_090044 | score=0.9822
+## [2026-08-10] ingest | wafer_vision | run_20260810_090050 | score=0.8357
