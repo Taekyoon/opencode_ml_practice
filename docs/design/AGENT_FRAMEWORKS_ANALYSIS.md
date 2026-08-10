@@ -20,7 +20,7 @@
 | 프레임워크 | 설치 | 오프라인 | 채점(gate) | 하네스 | 도입 형태 |
 |-----------|------|----------|------------|--------|-----------|
 | Shepherd 0.3.0 (MIT) | ✅ | ✅ | 승인/기각/롤백 로직 | claude CLI 존재 | **이벤트 기록 + 게이트 개념** |
-| SkillOpt 0.2.0 (MIT) | ✅ | ❌ (backend 요구) | 벤치마크 전용 | opencode 미지원 | **개념만 차용** (validate→reflect→gate) |
+| SkillOpt 0.2.0 (MIT) | ✅ | ❌ (backend 요구) | 벤치마크 전용 | opencode 미지원 | **개념만 차용** (rollout→reflect→gate) |
 
 ## 2. 프레임워크 실측 요약
 
@@ -51,8 +51,12 @@
 | Shepherd `changeset` (변경된 경로/상태) | `runner_snapshot.py` + `run_<id>/metrics.json` (코드·결과 재현) | `research/<task>/results/` |
 | Shepherd `settlement` (retained/released) | `experiments.status` (`completed`) + gate 통과 여부 | `src/research_store.py`, `src/validation_gate.py` |
 | SkillOpt `GateAction`/`GateResult` (채점 구조체) | `GateCheck`/`GateResult` — `accepted` + 개별 `checks`(근거·심각도) | `src/validation_gate.py` |
-| SkillOpt "통과한 것만 채택" | 게이트 통과 전 best_run 승격 금지 | `experiment_runner.py` + J2 레슨 |
-| (두 프레임워크 공통) "왜" 남기기 | `_rationale` 메타 키 — config에 보존, 모델 파라미터로 미침투(팀 규약) | `experiment_runner.py` get_config, J3 |
+| SkillOpt "통과한 것만 채택" | 게이트 통과 전 best_run 승격 금지 (규약) | **J2/J3 레슨 + AGENTS.md §4** — 파이프라인에 게이트 자동 연동은 아직 없음 |
+| (두 프레임워크 공통) "왜" 남기기 | `_rationale` 메타 키 — 학습자가 config에 추가, 모델 파라미터로 미침투(팀 규약) | **J3 레슨** + `experiment_runner.py`(읽는 키가 고정돼 있어 우연히 안전) |
+
+> **연동 수준의 현실**: `validation_gate`는 모듈·API가 준비되어 있지만, 자동 파이프라인
+> (DAG 러너 실행)에는 아직 import되지 않는다. 게이트 판정·기각(`gate_rejected` 이벤트
+> 포함)은 J3 레슨의 수동 사이클 코드에서 적용한다. 파이프라인 자동 연동은 후속 작업으로 둔다.
 
 ### 차용하지 않은 것
 

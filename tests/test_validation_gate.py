@@ -73,6 +73,19 @@ class TestOverfitting:
         c = _first_check(m, "overfitting")
         assert c.passed and c.severity == "warning"
 
+    def test_missing_recall_precision_warning(self):
+        m = _metrics().copy()
+        m.pop("recall")
+        m.pop("precision")
+        c = _first_check(m, "threshold_collapse")
+        assert c.passed and c.severity == "warning"
+
+    def test_missing_pr_auc_warning(self):
+        m = _metrics().copy()
+        m.pop("pr_auc")
+        c = _first_check(m, "random_model")
+        assert c.passed and c.severity == "warning"
+
 
 class TestThresholdCollapse:
     def test_collapse_rejects(self):
@@ -135,6 +148,21 @@ class TestEvaluateGate:
         assert r.accepted
         assert len(r.checks) == len(RULES)
 
+    def test_appended_rule_registered_and_runs(self):
+        # J2 4단계가 가르치는 "RULES.append()로 규칙 추가" 계약을 보호
+        def _probe(metrics: dict) -> GateCheck:
+            return GateCheck(name="probe_rule", passed=True, reason="ok", severity="warning")
+
+        before = list(RULES)
+        RULES.append(_probe)
+        try:
+            r = evaluate_gate(_metrics())
+            assert len(r.checks) == len(before) + 1
+            assert any(c.name == "probe_rule" for c in r.checks)
+        finally:
+            RULES[:] = before
+        assert len(RULES) == len(before)
+
     def test_error_rule_fail_rejects(self):
         r = evaluate_gate(_metrics(train_f1=1.0, f1=0.70))
         assert not r.accepted
@@ -145,8 +173,23 @@ class TestEvaluateGate:
         assert r.accepted
         assert any(c.name == "elapsed" and c.severity == "warning" for c in r.checks)
 
-    def test_gate_result_truthiness(self):
-        assert GateResult(accepted=True).accepted is True
+    def test_exact_limit_015_passes(self):
+        # 0.95-0.80은 근사 계산에서 0.14999… → 0.15 한계 바로 아래로 통과
+        r = evaluate_gate(_metrics(train_f1=0.95, f1=0.80))
+        c = next(c for c in r.checks if c.name == "overfitting")
+        assert c.passed, c.reason
+
+    def test_limit_adjacent_above_rejects(self):
+        # 0.9501-0.80 → 0.15009... → 한계 초과로 기각
+        r = evaluate_gate(_metrics(train_f1=0.9501, f1=0.80))
+        c = next(c for c in r.checks if c.name == "overfitting")
+        assert not c.passed, c.reason
+
+    def test_config_arg_ignored(self):
+        # config 인자는 예약이지만 규칙은 metrics만 본다
+        r1 = evaluate_gate(_metrics(train_f1=1.0, f1=0.7))
+        r2 = evaluate_gate(_metrics(train_f1=1.0, f1=0.7), {"model_type": "any"})
+        assert r1.to_dict() == r2.to_dict()
 
 
 # ---------------------------------------------------------------------------

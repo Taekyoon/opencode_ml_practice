@@ -145,6 +145,11 @@ PY
 최고 기록 `best_run`에 오르는 것을 막으면서, J1의 원칙대로 기각 사유를
 `gate_rejected` **이벤트**로 남겨 실패도 존재하는 일로 기록한다.
 
+> **게이트 해석 주의**: `overfitting` 갭은 "train은 smote 후 균형셋, test는 원본 불균형셋",
+> "train은 임계 0.5, test는 최적 임계"처럼 **평가 기준이 서로 달라** 과적합과 무관한 이유로
+> 커질 수도, 작아질 수도 있다. 위 실행에서 `gap≈0.126`(통과)은 그 예. 갭 자체보다
+> 추세와 실제 지표 조합으로 해석할 것.
+
 ### 3단계: 검증 — 이벤트로 되돌아보기
 
 J1에서 만든 이벤트 기록으로 "이번 사이클이 어떤 제안에서 나왔는지"를 이어붙일 수 있다:
@@ -170,36 +175,49 @@ PY
 ### 4단계: 확장 — "기록을 읽지 않으면" 실패 모드 재현
 
 이제 막 배운 개념의 반대를 재현해보자. **과거 이력을 안 보고 같은 config를 또 제안하는** 상황:
-단순 동등 비교(`==`)는 dict의 키 순서까지 봐서 같은 의미여도 오탐이 나므로,
-화살표 없는 정렬 JSON 문자열로 "의미가 같은 config"를 잡아내는 헬퍼를 만든다.
+`_rationale` 같은 메타 키가 들어 있으면 단순 비교(`==`)가 오탐하므로,
+`_` 메타 키를 제외한 "구성의 핵심"만 정렬 JSON 문자열로 잡아내는 헬퍼를 만든다.
 
 ```bash
 python - <<'PY'
 import sys, json; sys.path.insert(0, '.')
 from src.research_store import get_all_experiments
 
+def _core(cfg: dict) -> dict:
+    """메타 키(_ 접두)를 뺀 실제 하이퍼파라미터 구성."""
+    return {k: v for k, v in cfg.items() if not k.startswith("_")}
+
 def is_duplicate(cfg: dict, history) -> str:
-    """과거 실험 이력 중 순서와 무관하게 같은 config가 있으면 기존 run_id 반환."""
-    probe = json.dumps(cfg, sort_keys=True, default=str)
+    """과거 이력 중 _rationale와 무관하게 같은 config가 있으면 기존 run_id 반환."""
+    probe = json.dumps(_core(cfg), sort_keys=True, default=str)
     for r in history:
         row = json.loads(r["config_json"])
-        if json.dumps(row, sort_keys=True, default=str) == probe:
+        if json.dumps(_core(row), sort_keys=True, default=str) == probe:
             return r["run_id"]
     return ""
 
-# 방금 기록된(적용됨) experiment의 config를 그대로 재제안하는 상황
+# 방금 기록된(적용됨) experiment를 재제안하는 상황
 hist = get_all_experiments(task_id="failure_prediction", limit=100)
 if not hist:
     print("조회 대상 없음 — 2단계에서 gate를 통과한 실험이 없다면 먼저 실행할 것")
 else:
-    latest = json.loads(hist[0]["config_json"])
-    dup_id = is_duplicate(latest, hist)
-    print("의미상 중복 감지:", ("있음 -> 기존 " + dup_id) if dup_id else "없음")
+    latest_id, latest_cfg = hist[0]["run_id"], json.loads(hist[0]["config_json"])
+
+    # case 1: 구성 그대로, _rationale만 바꿔 재제안 → 중복 감지
+    re_propose = {**latest_cfg, "_rationale": "(재제안) ground-truth 재확인"}
+    d1 = is_duplicate(re_propose, hist)
+    print("case1 같은 구성 재제안:", ("중복! 기존 " + d1) if d1 else "미감지(이상)")
+
+    # case 2: 최소 하나 바꾼 다음 제안 → 새 구성
+    changed = {**latest_cfg, "model_type": "gradient_boosting"}
+    d2 = is_duplicate(changed, hist)
+    print("case2 구성 변경 제안:", ("중복! 기존 " + d2) if d2 else "새 제안 (중복 아님)")
 PY
 ```
 
-중복이 감지되면 헬퍼가 기존 `run_id`를 즉시 알려준다. `_rationale`가 달라도
-**구성(config)이 같으면 중복**이라는 점이 핵심이다.
+case1은 **기존 `run_id`가 즉시 반환**되고, case2는 "새 제안"으로 통과한다. 이 헬퍼는
+"같은 config 반복 금지" 규칙을 자동화한다 — `_rationale`(왜)가 달라도 **구성(config)이
+같으면 중복**이라는 핵심을 그대로 옮긴 것이다.
 
 > **교훈**: 기록을 읽으면 반복을 피하고, 안 읽으면 같은 실험이 쌓인다.
 > 에이전트가 발전한다는 것은 "과거 기록을 반영해 더 나은 제안을 만든다"는 뜻이다.

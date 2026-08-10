@@ -126,6 +126,7 @@ PY
 ### 4단계: 확장 — 자기만의 검증 규칙 추가하기
 
 이제 나만의 규칙을 하나 추가해보자. 예: **클래스 불균형 심각도 확인** — minority 비율이 5% 미만이면 warning.
+(아직 러너는 `minority_ratio` 지표를 만들지 않으므로, 아래 확인 단계에서는 수동 dict로 검증한다)
 
 ```bash
 cat >> src/validation_gate.py <<'PY'
@@ -147,23 +148,17 @@ def _check_imbalance_alert(metrics: dict) -> GateCheck:
         reason="미기록 또는 정상 범위",
         severity="warning",
     )
+
+
+RULES.append(_check_imbalance_alert)  # ★ 함수 정의 뒤에 등록 — 순서 문제 없음
 PY
 ```
 
 > **중요**: 규칙 함수 시그니처는 반드시 `(metrics: dict)` — `evaluate_gate()`가
 > `rule(metrics)` 형태로 호출하기 때문이다(`validation_gate.py`의 `evaluate_gate` 참고).
-
-이제 `RULES` 목록에 등록한다. `src/validation_gate.py`의 `RULES = [...]` 끝에 한 줄 추가:
-
-```python
-RULES = [
-    _check_overfitting,
-    _check_threshold_collapse,
-    _check_random_model,
-    _check_elapsed,
-    _check_imbalance_alert,   # ← 방금 추가한 규칙
-]
-```
+> 그리고 등록은 `RULES = [...]` 리스트 **편집이 아니라** `RULES.append(...)`로 한다.
+> `cat >>`는 파일 맨 끝(적절한 기존 `RULES` 정의 **아래**)에 코드를 붙이므로,
+> "목록에 이름 추가" 방식이면 함수 정의보다 앞에서 참조해 `NameError`가 난다.
 
 등록이 동작하는지 확인:
 

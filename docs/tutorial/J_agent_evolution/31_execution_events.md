@@ -86,10 +86,13 @@ import sys; sys.path.insert(0, '.')
 from src.research_store import get_recent_events
 for e in get_recent_events(5):
     print(f"{e['timestamp'][:19]}  {e['event_type']:<10} {e['run_id'][:32]}")
+print("(출력이 비어 있으면 아직 events 테이블이 비어 있다는 뜻)")
 PY
 ```
 
 > **관찰 포인트**: 방금 러너를 단독 실행했는데 이벤트가 **새로 추가되지 않았다.**
+> (아래 결과가 빈 목록이면 DAG를 돌린 적이 아직 없어 처음부터 비어 있는 것이고,
+> 이벤트가 있었다면 그 개수가 그대로다.)
 
 그 이유는 이벤트를 남기는 곳이 러너가 아니라 **DAG(`ml_research_loop.py`)의
 `_run_experiment()`** 이기 때문이다. 러너 단독 실행은 `metrics.json`만 쓰고

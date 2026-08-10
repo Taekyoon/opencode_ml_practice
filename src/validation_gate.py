@@ -12,7 +12,7 @@
 
 사용 예:
     from src.validation_gate import evaluate_gate
-    result = evaluate_gate(metrics_dict, config_dict)
+    result = evaluate_gate(metrics_dict)   # 규칙은 metrics 값을 기준으로만 판정
     if not result.accepted:
         print("기각:", result.reason)
 """
