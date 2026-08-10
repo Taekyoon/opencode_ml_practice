@@ -50,7 +50,7 @@ c = get_config()
 c["task"] = "anomaly"
 r = run_experiment(c)
 m = r["metrics"]
-print("분류 score:", r["score"])
+print("anomaly score (=ROC-AUC):", r["score"])
 print("anomaly ROC-AUC:", m["anomaly_roc_auc"], "(ref:", m["anomaly_ref_class"], ")")
 PY
 ```

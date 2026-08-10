@@ -154,6 +154,7 @@ PY
 
 > **Shepherd 사이드바** (선택) — 오프라인 격리 환경에서 Shepherd의 이벤트 기록을 보고 비교한다.
 > Shepherd는 `~/.venvs/agent-tools` 격리 venv에만 설치되어 있고, 프로젝트 런타임에는 영향을 주지 않는다.
+> (설치 과정은 [설치 로그](../../design/INSTALL_LOG.md) 참고)
 > **`~/.venvs/agent-tools/bin/shepherd`가 없으면 이 단계는 통째로 건너뛰어도 된다** — 핵심 개념은 아래와 동일하다.
 
 ```bash

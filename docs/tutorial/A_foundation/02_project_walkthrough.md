@@ -22,12 +22,17 @@ opencode_ml_practice/
 │   ├── preprocessing.py          #   결측치/스케일링
 │   ├── model.py                  #   모델 정의
 │   ├── evaluation.py             #   평가 지표
+│   ├── text_processing.py        #   텍스트 토큰화/TF-IDF (B5/B6)
+│   ├── image_processing.py       #   웨이퍼 특징 추출 (B8/I)
+│   ├── validation_gate.py        #   실험 검증 게이트 (J2)
 │   └── research_store.py         #   실험 기록 (SQLite)
 ├── research/                     # 연구 작업 공간
 │   ├── tasks_registry.py         #   태스크 등록소
 │   ├── tasks_extra.json          #   사용자 등록 태스크
-│   ├── failure_prediction/       #   분류 태스크 폴더
-│   ├── quality_regression/       #   회귀 태스크 폴더
+│   ├── failure_prediction/       #   빌트인 분류 태스크 (반도체 failure)
+│   ├── quality_regression/       #   빌트인 회귀 태스크 (두께 예측)
+│   ├── prompt_guard/             #   프롬프트 가드레일 태스크 (G 모듈)
+│   ├── wafer_vision/             #   웨이퍼맵 분류 태스크 (B8/I 모듈)
 │   ├── wiki/                     #   지식 베이스 (마크다운)
 │   ├── datasets/                 #   등록된 데이터셋
 │   ├── inbox/                    #   새 데이터 투입함

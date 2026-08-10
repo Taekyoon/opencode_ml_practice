@@ -15,6 +15,7 @@
 
 - [tasks/failure_prediction.md](tasks/failure_prediction.md) — 분류 태스크 누적 발견 (현재 베이스라인 score=0.7912)
 - [tasks/quality_regression.md](tasks/quality_regression.md) — 회귀 태스크 누적 발견 (현재 베이스라인 R²=0.9822)
+- [tasks/prompt_guard.md](tasks/prompt_guard.md) — 프롬프트 공격 탐지 가드레일 (score=1.0, hard_eval 0.42)
 - [tasks/wafer_vision.md](tasks/wafer_vision.md) — 웨이퍼맵 결함 분류/이상탐지 (score=0.2369, WM-811K 실데이터)
 
 ## Techniques (기법별 종합)
@@ -26,7 +27,7 @@
 
 ## Datasets (데이터셋)
 
-- [datasets/lab_sensor_data.md](datasets/lab_sensor_data.md) — 5,000행, failure 비율 16.98%, 특성 8개
+- [datasets/lab_sensor_data.md](datasets/lab_sensor_data.md) — 5,000행, failure 비율 16.7%, 특성 7개
 - [datasets/wm811k.md](datasets/wm811k.md) — WM-811K 웨이퍼맵, 811,457행 (라벨 172,950)
 
 ## Synthesis (교차 종합)

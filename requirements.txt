@@ -5,3 +5,7 @@ imbalanced-learn>=0.12
 matplotlib>=3.7
 seaborn>=0.13
 jupyter>=1.0
+
+# Airflow (선택 — 모듈 D/E/F용, 무겁다. DAG는 Airflow 2.x API 사용)
+# pip install "apache-airflow>=2.7,<3"
+# apache-airflow>=2.7,<3

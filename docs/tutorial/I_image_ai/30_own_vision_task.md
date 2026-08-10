@@ -37,10 +37,30 @@ wafer_vision 을 예로 보면 이미지 태스크는 4개의 요소로 이뤄�
 ### 2단계: 빌드 (스캐폴드 실행)
 스캐폴드는 `failure_prediction`처럼 이미 등록된 dataset 기반이다. 이미지 태스크의
 경우 runner 에서 `src.image_processing` 를 import 해 붙인다:
+
+**이미지 dataset을 먼저 등록한다** — 스캐폴드는 CSV의 컬럼을 `img_col`(이미지 파일 경로)
+으로 알아서 인식하지 못하므로, `register_file(img_col=...)`로 명시해야 한다:
+```python
+import sys
+sys.path.insert(0, ".")
+from src.data_manager import register_file
+
+register_file(
+    "my_images.csv",        # research/inbox/ 에 넣어둔 파일
+    target_col="label",
+    img_col="image_path",   # 각 행의 웨이퍼맵 이미지 경로가 담긴 컬럼
+    name="my_image_dataset",
+)
+```
+등록 후 스캐폴드를 실행한다:
 ```bash
-python scripts/new_task.py my_vision --dataset your_dataset --target label --note "내 비전 태스크"
+python scripts/new_task.py my_vision --dataset my_image_dataset --target label --note "내 비전 태스크"
 ```
 성공 시 `research/my_vision/` 에 runner·program·results/ 가 생성된다.
+
+> **왜 `--dataset`만 지원하나**: 스캐폴드의 목적은 "이미 등록된 dataset 위에
+> 태스크(폴더·runner·program)를 생성"하는 것이다. 이미지 라벨링·경로 정리는
+> 데이터 등록 단계(`register_file`)의 몫이다.
 
 ### 3단계: 빌드 (이미지 파이프라인 연결)
 생성된 `experiment_runner.py`에 이미지 처리 3줄을 이어붙여 이미지를 특징으로 바꾼다:

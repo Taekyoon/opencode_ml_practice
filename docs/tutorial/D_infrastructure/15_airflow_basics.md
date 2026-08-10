@@ -37,10 +37,12 @@ airflow version
 ```
 설치 안 되어 있으면:
 ```bash
-pip install apache-airflow
+pip install "apache-airflow>=2.7,<3"
 ```
-> 설치가 무겁다면, 이 레슨과 D2는 코드만 읽고 확인해도 된다.
-> D3에서 실행한다.
+> **버전 주의**: 이 프로젝트의 DAG는 Airflow **2.x API**(`schedule_interval`,
+> `airflow.operators.python`)를 쓴다. 실습 환경은 2.10.5이며, Airflow 3.x에서는
+> `make init`(db 초기화)나 DAG 파싱이 돌아가지 않을 수 있다. 반드시 2.7~2.x 범위로 설치한다.
+> 설치가 무겁다면, 이 레슨과 D2는 코드만 읽고 확인해도 된다. D3에서 실행한다.
 
 ### 2단계: Airflow 홈 구성 확인
 ```bash
@@ -52,7 +54,7 @@ ls airflow/dags/     # 여기 있는 py 파일만 DAG로 인식
 ```bash
 make scheduler
 ```
-`airflow scheduler` 프로세가 뜬다. 이 프로세가 DAG를 주기적으로 파싱하고 실행을 예약한다.
+`airflow scheduler` 프로세스가 뜬다. 이 프로세스가 DAG를 주기적으로 파싱하고 실행을 예약한다.
 
 ### 4단계: DAG 목록 확인
 ```bash

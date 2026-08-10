@@ -25,6 +25,7 @@ t_prepare >> t_run >> t_eval >> t_report
 
 > **흐름**: runner로 실행 → 숫자 기록(`research.db`) → 지식 기록(`wiki/`) → 리포트 파일.
 > 이 4단계가 "모듈 B/C"에서 배운 것의 자동화 버전이다.
+> (엔지니어링 관점: [엔지니어링 개념](../../design/ENGINEERING_CONCEPTS.md) §2 루프 공학 참고)
 
 ### XCom으로 데이터 전달
 - `_run_experiment`가 `xcom_push(key="run_result", value=result)`로 실행 결과 전달

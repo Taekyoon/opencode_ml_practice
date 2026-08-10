@@ -18,7 +18,10 @@ This skill provides methods to analyze and resolve class imbalance in semiconduc
 Compute the class ratio and decide which sampling strategy fits:
 
 ```python
-from src.imbalanced_data_specialist import ImbalancedDataSpecialist
+import sys
+
+sys.path.insert(0, ".opencode/skills/imbalanced-data-specialist/src")
+from imbalanced_data_specialist import ImbalancedDataSpecialist
 
 specialist = ImbalancedDataSpecialist(random_state=42)
 ratio = specialist.analyze_imbalance(y)   # prints class distribution + recommendation
@@ -67,9 +70,11 @@ report = specialist.evaluate_imbalanced(y_true, y_pred, y_proba)
 ## How to run the helper module
 
 ```bash
-# within the project root containing src/imbalanced_data_specialist.py
+# 필수: imbalanced-learn 설치
 pip install imbalanced-learn
-python -m pytest .opencode/skills/imbalanced-data-specialist/tests -q  # optional
+
+# 헬퍼 모듈 import 검증 (프로젝트 루트에서)
+python -c "import sys; sys.path.insert(0, '.opencode/skills/imbalanced-data-specialist/src'); from imbalanced_data_specialist import ImbalancedDataSpecialist; print('ok')"
 ```
 
 ## Parameters

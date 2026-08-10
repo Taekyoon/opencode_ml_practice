@@ -80,7 +80,7 @@ airflow dags show ml_research_loop                 # 새 태스크 4개 태스�
 | 항목 | 역할 |
 |------|------|
 | `experiment_runner.py` | 단일 파이프라인. `python research/<task_id>/experiment_runner.py` 로 실행 |
-| `get_config()` | 하이퍼파라미터를 이 dict에 담음 (에이전트 튜닝 지점). `_` 접두 메타 키(예: `_rationale`)로 변경 근거를 남길 수 있다 — `run_experiment()`는 `_`로 시작하는 키를 모델 파라미터로 사용하지 않고 config에 보존한다 |
+| `get_config()` | 하이퍼파라미터를 이 dict에 담음 (에이전트 튜닝 지점). `_` 접두 메타 키(예: `_rationale`)로 변경 근거를 남길 수 있다 — 모델에는 `model_params` dict만 전달되므로 `_` 접두 키는 모델 파라미터로 쓰이지 않고, config 전체가 `metrics.json`에 그대로 보존된다 |
 | `run_experiment()` | 데이터 로드→전처리→학습→평가, `{"config","metrics","score","kind"}` 반환 |
 | `_run_and_save()` | 결과를 `results/run_<id>/metrics.json` + `runner_snapshot.py` 로 저장 |
 | `program.md` | 사람이 연구 방향/평가 지표 작성 |
