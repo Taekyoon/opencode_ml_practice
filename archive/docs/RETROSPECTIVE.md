@@ -26,7 +26,7 @@
 
 ## 3. 작업 위치와 프로젝트 구조
 
-- 위치: `/Users/seohyunwon/project/ted_workspace/semiconductor_failure_prediction/`
+- 위치: `<workspace>/semiconductor_failure_prediction/` (일반 사용자 홈 아래 신설)
 - 기존 TED 워크스페이스 레이아웃을 존중해 독립 폴더를 신설
 
 ```

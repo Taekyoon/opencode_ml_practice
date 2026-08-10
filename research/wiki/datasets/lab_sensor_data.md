@@ -52,6 +52,8 @@ python scripts/new_task.py <task_id> --inbox synthetic_data.csv --target failure
 
 - raw: `research/datasets/lab_sensor_data/` (data_manager 등록본)
 - 원본 합성기: `src/data_generation` (5,000행, 랜덤 시드 42)
+- **라이선스**: 합성 데이터 — `src.data_generation`으로 재생성 가능하며
+  실제 산업 데이터가 아니다. 원본 CSV는 gitignore(`data/*.csv`)로 커밋에서 제외.
 
 ## 교차 참조
 

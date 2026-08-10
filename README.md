@@ -43,6 +43,11 @@ opencode
 
 > 모델 전환: opencode 세션 내에서 `/models` 로 변경하거나 `opencode.json`의 `"model"` 필드로 기본값을 고정할 수 있습니다.
 
+> **⚠️ AI 생성 코드 공개**: 이 저장소의 코드·문서·튜토리얼은 주로 **AI 코딩 에이전트
+> [opencode](https://opencode.ai)와 대화하며 작성·수정되었습니다** (주력 모델
+> `opencode/deepseek-v4-flash-free`). 모든 변경은 [AGENTS.md](AGENTS.md)의 규칙에 따라
+> 리뷰·테스트를 거쳐 커밋됩니다.
+
 튜토리얼 상세: [docs/tutorial/README.md](docs/tutorial/README.md) · A~J 모듈 33개 레슨
 
 | 모듈 | 내용 |

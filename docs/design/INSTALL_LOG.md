@@ -64,7 +64,7 @@ mkdir /tmp/shepherd-qs && cd /tmp/shepherd-qs
 # → binding: workspace / state: released / paths: [SHEPHERD_QUICKSTART.txt]
 
 ~/.../bin/shepherd doctor claude --probe
-# → ok claude-cli: /Users/seohyunwon/.local/bin/claude
+# → ok claude-cli: ~/.local/bin/claude
 #   ok claude-auth-probe: authenticated (subscription_login)
 ```
 
