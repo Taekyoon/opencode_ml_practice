@@ -98,3 +98,21 @@ ml_research_loop.py를 읽고 이 DAG가 하는 전체 일을 한 그림으로
 
 ## 다음 레슨
 [D3. 트리거와 스케줄](17_trigger_and_schedule.md) — 실제로 DAG를 실행해본다.
+
+## 엔지니어링 관점: 그래프 공학과 루프 공학
+
+이 레슨의 DAG(`ml_research_loop.py`)는 에이전트 자동화의 두 관점을 동시에 보여준다.
+(개념 정의는 [엔지니어링 개념](../../design/ENGINEERING_CONCEPTS.md) 참고)
+
+- **그래프 공학(§3)**: `t_prepare >> t_run >> t_eval >> t_report`는 "작업 간 의존성과
+  실행 순서"를 정의한 **선형 그래프**다. 연구 태스크 4개(failure_prediction·prompt_guard·
+  quality_regression·wafer_vision)는 서로 의존성이 없어 **병렬**로 실행된다. 그리고
+  `_guard()` + `AirflowSkipException`은 **선택적 분기**로, 대상이 아닌 태스크를
+  건너뛰어도 하류로 전파되지 않게 한다.
+- **루프 공학(§2)**: 이 4단계 실행이 반복되면 "결과가 다음 실행에 영향을 주는" **자율
+  연구 루프**가 된다. 루프가 닫히는 지점은 `_evaluate_store`가 `record_experiment()`
+  로 숫자를 남기고, `_update_wiki`가 지식을 남겨 **에이전트가 다음 가설을 결정**하는
+  곳이다.
+
+> **체크 포인트**: "이 DAG의 그래프 위상을 바꾼다면 어떤 병렬성/장애 전파가 달라질까?"
+> 를 E3에서 자율 연구 루프와 연결해 생각해보세요.

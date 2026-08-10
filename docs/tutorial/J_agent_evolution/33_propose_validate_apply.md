@@ -246,3 +246,21 @@ research/failure_prediction/experiment_runner.py와 src/validation_gate.py를 �
 
 ## 다음 레슨
 처음으로 → [README](../README.md) — 축하합니다! J 모듈(에이전트 발전 심화)을 완료했습니다.
+
+## 엔지니어링 관점: 루프 공학과 그래프 공학
+
+이 레슨의 제안→검증→적용 사이클은 "닫히지 않은 루프"의 실례를 다룬다.
+(개념 정의는 [엔지니어링 개념](../../design/ENGINEERING_CONCEPTS.md) 참고)
+
+- **루프 공학(§2)**: `get_config() → run_experiment() → evaluate_gate() → record_experiment() /
+  gate_rejected` 루프는 게이트에서 **기각된 config는 `events`에만 남고 `experiments`로
+  들어가지 않는다**. 그 때문에 "기각 사유가 다음 제안에 반영되려면" 에이전트가
+  `get_events()`를 읽어야 하며, 이 링크는 **아직 자동으로 닫혀 있지 않다** — 이
+  레슨의 확장 과제가 바로 이 지점이다.
+- **그래프 공학(§3)**: D2에서 본 `prepare → run → eval → report` 선형 그래프에서,
+  게이트는 `eval` 단계에 놓인 **조건부 분기**(통과→ `record_experiment`, 기각→ `events`)다.
+  "위상에 분기를 넣는다"는 것이 그래프 공학의 결정이며, 여기선 기각을 하류로
+  전파하지 않는 선택을 했다.
+
+> **체크 포인트**: 만약 게이트를 DAG 파이프라인(`_evaluate_store`)에 연동한다면,
+> "기각된 실험이 기록되는 그래프 위치"가 어디가 되어야 할지 생각해보세요.
