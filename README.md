@@ -10,6 +10,7 @@
 - **ML 파이프라인 기본기** — 데이터 → 전처리 → 모델 → 평가의 전체 흐름
 - **자율 ML 연구 루프** — 에이전트 + Airflow DAG + 실험 기록 DB + LLM Wiki까지
 - **스킬/에이전트 제작** — `.opencode/`에서 나만의 전문가를 만드는 법
+- **에이전트 발전 심화 (모듈 J)** — 이벤트 기록·검증 게이트·제안→검증→적용 루프로 "에이전트를 발전시키는 법"
 
 ## 🚀 시작하기 (튜토리얼으로)
 
@@ -42,7 +43,7 @@ opencode
 
 > 모델 전환: opencode 세션 내에서 `/models` 로 변경하거나 `opencode.json`의 `"model"` 필드로 기본값을 고정할 수 있습니다.
 
-튜토리얼 상세: [docs/tutorial/README.md](docs/tutorial/README.md) · A~I 모듈 30개 레슨
+튜토리얼 상세: [docs/tutorial/README.md](docs/tutorial/README.md) · A~J 모듈 33개 레슨
 
 | 모듈 | 내용 |
 |------|------|
@@ -54,12 +55,15 @@ opencode
 | **F. 종합 프로젝트** | 나만의 태스크로 전체 사이클 직접 실행 (수료) |
 | **G. AI 가드레일 (선택 심화)** | 프롬프트 공격 탐지, 가드레일 모델·에이전트, 자유 확장 |
 | **I. 이미지 AI (선택 심화)** | 웨이퍼 이미지 이상탐지, 특징 공학, 나만의 비전 태스크 |
+| **J. 에이전트 발전 심화 (선택 심화)** | 실행 이벤트 기록, 검증 게이트, 제안→검증→적용 루프 — Shepherd/SkillOpt 개념 차용 |
 
 ## 📁 프로젝트 구조
 
 ```
 opencode_ml_practice/
 ├── src/                    # 재사용 코어 모듈 (데이터/전처리/모델/평가/저장)
+├── src/validation_gate.py  # 실험 결과 검증 게이트 (GateResult + 규칙, 모듈 J)
+├── src/research_store.py   # 실험 기록 / 최고 점수 / 이벤트(events) API
 ├── research/               # 연구 작업 공간 (tasks/, wiki/, runner, research.db)
 │   ├── tasks_registry.py   # 태스크 레지스트리 (빌트인 + tasks_extra.json)
 │   ├── failure_prediction/ # 실습용 분류 태스크 (반도체 failure)
@@ -69,7 +73,7 @@ opencode_ml_practice/
 │   └── wiki/               # LLM 위키 지식 베이스 (index/log/overview/tasks/...)
 ├── airflow/dags/           # ml_research_loop 자율 연구 DAG
 ├── scripts/                # new_task 스캐폴드 CLI, wiki_lint 검진
-├── docs/tutorial/          # 대화형 튜토리얼 본체 (A~I 모듈)
+├── docs/tutorial/          # 대화형 튜토리얼 본체 (A~J 모듈)
 ├── .opencode/              # OpenCode 에이전트 / 스킬 정의
 ├── archive/                # 보존된 레거시 코드/문서 (아래 "보존 아카이브" 참조)
 ├── AGENTS.md               # AI 에이전트 작업 가이드 (필수)
