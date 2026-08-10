@@ -128,3 +128,32 @@ make wiki-lint                               # 위키 지식 베이스 건강 �
 - **OpenCode** 도움말: [https://opencode.ai](https://opencode.ai)
 - 튜토리얼 학습자 유형: OpenCode 초보 / ML 초보 / ML 실무자 / AI 자동화 학습자
 - 진행 기록: `research/wiki/learning_progress.md` (OpenCode가 자동 갱신)
+
+## 라이선스
+
+이 프로젝트는 MIT 라이선스로 배포됩니다. 자세한 내용은 [LICENSE](LICENSE)를 참조하세요.
+
+## 인용 및 레퍼런스
+
+이 프로젝트는 다음 연구/도구에서 데이터와 개념을 사용했습니다.
+
+### 데이터셋
+
+- **WM-811K Wafer Map Dataset**
+  Wu, M.-J., Jang, J.-S. R., & Chen, J.-L. (2015). "Wafer Map Failure Pattern Recognition and Similarity Ranking for Large-Scale Data Sets." *IEEE Transactions on Semiconductor Manufacturing*, 28(1), 1-12.
+  DOI: [10.1109/TSM.2014.2364237](https://doi.org/10.1109/TSM.2014.2364237)
+  출처: [Kaggle](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map) | [MIR Lab](http://mirlab.org/dataSet/public/)
+  라이선스: CC0 (퍼블릭 도메인)
+
+### 개념 차용
+
+- **Shepherd** (MIT) — 이벤트 기록, changeset 컨셉
+- **SkillOpt** (MIT) — 게이트/검증(GateResult), rollout-reflect-gate 루프 컨셉
+- **Karpathy LLM Wiki** — 위키 lint 컨셉의 영감
+
+### 도구
+
+- [opencode](https://opencode.ai) — 에이전트 런타임 하네스
+- [Apache Airflow](https://airflow.apache.org) — DAG 오케스트레이션
+- [scikit-learn](https://scikit-learn.org) — ML 파이프라인
+- [imbalanced-learn](https://imbalanced-learn.org) — 불균형 처리
