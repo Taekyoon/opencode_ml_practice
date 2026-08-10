@@ -1,5 +1,7 @@
 """반도체 제조 failure 예측을 위한 가상 수치 데이터 생성."""
 
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -10,8 +12,8 @@ def generate_synthetic_data(n_samples: int = 5000, seed: int = RANDOM_SEED) -> p
     """반도체 공정/측정 변수와 failure 라벨을 갖는 가상 데이터를 생성한다.
 
     공정 변수: temperature, pressure, process_time, chemical_concentration
-    측정 변수: thickness, resistance, dopant_density
-    라벨: boolean (1=불량, 0=합격), 불량률 약 10%
+    측정 변수: thickness, resistivity, dopant
+    라벨: int (1=불량, 0=합격), 불량률 약 16.7% (seed 42 고정)
     """
     rng = np.random.default_rng(seed)
 
@@ -57,6 +59,7 @@ def generate_synthetic_data(n_samples: int = 5000, seed: int = RANDOM_SEED) -> p
 
 
 if __name__ == "__main__":
+    os.makedirs("data", exist_ok=True)
     df = generate_synthetic_data()
     df.to_csv("data/synthetic_data.csv", index=False)
     print(df.head())

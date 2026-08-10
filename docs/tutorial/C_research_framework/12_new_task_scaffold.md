@@ -39,12 +39,22 @@ python research/tasks_registry.py
 ```bash
 python scripts/new_task.py --help
 ```
+`--dataset`(기 등록 dataset)과 `--inbox`(inbox의 새 파일을 등록하면서 생성) 두 가지를
+지원하는 것을 확인한다.
+
+> **데이터셋 등록 흐름**: 이 프로젝트에서 데이터는 반드시 `src.data_manager` 경유로
+> 등록한다. A1에서 만든 `data/synthetic_data.csv`도 아직 **미등록** 상태다.
+> `--inbox`로 새 태스크를 만들면 그 CSV를 `research/datasets/`로 복사하고
+> `research.db`의 `datasets` 테이블에 기록한다 (등록은 한 번만).
 
 ### 3단계: 실행해보기 (연습용 — 잠깐 만들고 지울 것이다)
 ```bash
-python scripts/new_task.py demo_task --dataset lab_sensor_data --target failure --note "튜토리얼 연습"
+mkdir -p research/inbox
+cp data/synthetic_data.csv research/inbox/synthetic_data.csv
+python scripts/new_task.py demo_task --inbox synthetic_data.csv --target failure --note "튜토리얼 연습"
 ```
-출력에서 `kind: classification` 판정을 확인한다.
+출력에서 `dataset : demo_task`, `kind: classification` 판정을 확인한다.
+> inbox의 파일이 `datasets/demo_task/`로 복사되면서 등록되고, inbox에서는 사라진다.
 > 대상 컬럼이 2개 값(0/1)뿐이므로 분류로 판정되는 것.
 
 ### 4단계: 생성물 확인
@@ -62,23 +72,33 @@ python research/demo_task/experiment_runner.py
 `research/demo_task/results/run_*/metrics.json`가 생성되고 DB에 기록된다.
 
 ### 6단계: 정리 (실습 후 삭제)
-연습용 태스크이므로 지운다:
+연습용 태스크이므로 지운다 — 태스크 폴더·레지스트리·**등록한 데이터셋**까지 한 번에:
 ```bash
 rm -rf research/demo_task
+rm -rf research/datasets/demo_task
 python - <<'PY'
-import json, os
+import json, os, sqlite3
 from research import tasks_registry as tr
 extra_path = tr.EXTRA_TASKS_FILE
+
+conn = sqlite3.connect("research/research.db")
+conn.execute("DELETE FROM datasets WHERE name='demo_task'")
+conn.commit(); conn.close()
+
 if os.path.exists(extra_path):
     data = json.load(open(extra_path))
     data.pop("demo_task", None)
     json.dump(data, open(extra_path, "w"), indent=2, ensure_ascii=False)
+
+tr.TASKS.pop("demo_task", None)   # 메모리(현재 프로세스)에서도 제거
 print(tr.list_tasks())
 PY
 ```
+`python -m src.data_manager` 실행해서 `demo_task`가 datasets 목록에서 빠졌는지 확인한다.
 
 > **실무 팁**: 임시 테스트로 만든 태스크는 커밋하기 전에 꼭 제거한다.
 > AGENTS.md(섹션 8): "tasks_extra.json 은 ... 임시 테스트만 생성됐던 경우 제거 후 커밋"
+> 참고: 위 실습 필수 데이터셋(`synthetic_data`)을 지운 건 아니므로 다음 실습(F1)에 영향 없다.
 
 ## 이해 확인
 

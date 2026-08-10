@@ -79,5 +79,5 @@ hard_eval.misclassified에 오류가 난 예시 3개를 정리해줘 (왜 모델
 ```
 
 ## 다음 레슨
-모듈 C: [실험 runner 들여다보기](../C_research_framework/11_experiment_runner.md) —
-텍스트든 수치든 같은 프레임워크로 실험을 관리한다.
+[B7. 웨이퍼 이미지](26_wafer_images.md) — 수치·텍스트와 달리 "이미지"가 입력이 되는
+문제를 웨이퍼맵으로 다뤄본다. (모듈 C는 B8을 마친 뒤 이어간다.)

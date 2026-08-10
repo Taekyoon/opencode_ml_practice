@@ -16,9 +16,9 @@ dataset: lab_sensor_data
 | 이름 | lab_sensor_data |
 | 행 수 | **5,000** |
 | target | `failure` (0/1) |
-| failure 비율 | **16.98%** (불균형) |
+| failure 비율 | **16.7%** (불균형) |
 
-## 특성 (8개)
+## 특성 (7개)
 
 - `temperature` — 공정 온도
 - `pressure` — 공정 압력
@@ -27,15 +27,26 @@ dataset: lab_sensor_data
 - `thickness` — 생성물 두께
 - `resistivity` — 비저항
 - `dopant` — 도핑 농도
-- `delta_temp` — 온도 변화량
 
 > `quality_regression`은 이 중 `thickness`를 target으로 사용한다 (회귀).
+> 기존에 기록된 `delta_temp` 컬럼은 실제 생성기(`src/data_generation`)에 없어
+> 특성 목록에서 제거했다 (파생 변수로 만들면 새 태스크에서 사용 가능).
 
 ## 분포/주의사항
 
-- 16.98% failure → {분류} 불균형 처리 필요 → [techniques/imbalance_handling.md](../techniques/imbalance_handling.md)
+- 16.7% failure → {분류} 불균형 처리 필요 → [techniques/imbalance_handling.md](../techniques/imbalance_handling.md)
 - 결측치 5% 주입 (data_generation) → 전처리에서 처리됨
 - 결측치/이상치 확인 방법: `python -m src.data_manager`, `python -m src.preprocessing`
+
+## 등록 방법 (재현)
+
+이 dataset은 **커밋되지 않는다** (research.db/datasets는 gitignore). 원본에서 재등록:
+
+```bash
+mkdir -p research/inbox
+cp data/synthetic_data.csv research/inbox/synthetic_data.csv
+python scripts/new_task.py <task_id> --inbox synthetic_data.csv --target failure
+```
 
 ## 원본
 

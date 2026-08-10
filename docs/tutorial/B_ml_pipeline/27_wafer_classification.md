@@ -106,4 +106,6 @@ research/wafer_vision/results/의 가장 최근 metrics.json을 읽고,
 ```
 
 ## 다음 레슨
-모듈 I(이미지 AI) 시작: [I1. 이상 탐지](../I_image_ai/28_anomaly_detection.md)
+모듈 C: [실험 runner 들여다보기](../C_research_framework/11_experiment_runner.md) —
+이미지든 수치든 같은 프레임워크로 실험을 관리한다. (이미지 심화는 수료 후 **모듈 I**에서
+이어간다: [I1. 이상 탐지](../I_image_ai/28_anomaly_detection.md))

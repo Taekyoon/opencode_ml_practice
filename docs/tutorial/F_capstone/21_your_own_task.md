@@ -10,8 +10,8 @@
 지금까지 배운 것을 조합해서 **나만의 태스크**를 하나 만들어 DAG에서 실행까지 해보자.
 
 ### 시나리오
-`lab_sensor_data` 데이터셋(현재 target=failure)로 **새 목표 변수를 하나 만들어**
-새 태스크를 등록한다. 예를 들면:
+A1에서 만든 `data/synthetic_data.csv`(현재 target=failure)를 **inbox로 등록**하여
+**새 목표 변수를 하나 만들어** 새 태스크를 등록한다. 예를 들면:
 - 파생 변수 `stress = temperature * pressure`(불량과 관련 있어 보임)를 계산 후
 - "이 파생변수로 failure를 예측하면 성능이 오르는가?"라는 가설 검증
 
@@ -25,14 +25,18 @@
 | 항목 | 값 |
 |------|-----|
 | task_id | (예: `failure_stress`) |
-| dataset | `lab_sensor_data` |
+| dataset | A1의 `synthetic_data.csv`를 inbox로 등록 |
 | target | `failure` (기존) 또는 만들 컬럼 |
 | score | 분류 = F1 × PR-AUC |
 
 ### 2단계: 스캐폴드로 태스크 생성
+inbox에 데이터를 넣고 등록하면서 태스크를 만든다 (C2에서 배운 `--inbox` 흐름):
 ```bash
-python scripts/new_task.py my_stress_task --dataset lab_sensor_data --target failure --note "튜토리얼 종합 과제"
+mkdir -p research/inbox
+cp data/synthetic_data.csv research/inbox/synthetic_data.csv
+python scripts/new_task.py my_stress_task --inbox synthetic_data.csv --target failure --note "튜토리얼 종합 과제"
 ```
+`dataset : my_stress_task`(등록본), `kind: classification` 판정을 확인한다.
 생성물 `research/my_stress_task/` 확인.
 
 ### 3단계: runner에 파생 변수 추가 (에이전트에게 부탁)
