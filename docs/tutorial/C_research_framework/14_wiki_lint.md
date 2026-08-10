@@ -35,29 +35,40 @@ make wiki-lint
 
 ### 2단계: 출력 해석
 ```
-wiki 린트 결과: 0 개 문제 발견
-오래된 데이터 (7일+ 미갱신):
+wiki 린트 결과: 문제 없음
 ```
 - "문제 없음"이 나오면 정상
 - 오래된 데이터 항목이 보이면 실제로 위키에 낡은 페이지일 가능성 — 갱신 대상
 
 ### 3단계: 일부러 문제 만들기 (연습)
 ```bash
-echo "# temp" > research/wiki/temp_page.md       # 1) index에 없음 → 미등록
-echo "[]" > research/wiki/index_tmp_broken.md
+echo "# temp" > research/wiki/temp_page.md                  # 1) index에 없음 → 미등록
+echo "[없는 페이지](../no_such_page.md)" > research/wiki/tmp_broken.md   # 3) 없는 파일 링크
 ```
 린트 재실행:
 ```bash
 python scripts/wiki_lint.py
 ```
-`[미등록] temp_page.md`가 잡히는 것을 확인한다.
+출력 (고아까지 포함하면 5건이 잡힌다):
+```
+wiki 린트 결과: 5 개 문제 발견
+  - [미등록] index.md 에 없음: temp_page.md
+  - [미등록] index.md 에 없음: tmp_broken.md
+  - [고아] 어떤 페이지도 링크하지 않음: temp_page.md
+  - [고아] 어떤 페이지도 링크하지 않음: tmp_broken.md
+  - [broken link] tmp_broken.md -> ../no_such_page.md
+```
+`[미등록]`·`[고아]`·`[broken link]`가 잡히는 것을 확인한다. 종료 코드도 1(문제 있음)로 바뀐다.
 
-### 4단계: 정리
+### 4단계: 정리 (반드시 만든 파일 전부를 지운다)
 ```bash
 rm research/wiki/temp_page.md
-make wiki-lint
+rm research/wiki/tmp_broken.md
+python scripts/wiki_lint.py
 ```
-다시 문제 없음을 확인한다.
+다시 "문제 없음"을 확인한다.
+> 오염 예방: 실습을 위해 만든 임시 페이지는 위키를 영구히 어지럽히므로
+> **반드시 전부 삭제**하고 확인한다.
 
 ## 이해 확인
 

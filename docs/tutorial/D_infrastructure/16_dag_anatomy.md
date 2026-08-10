@@ -57,22 +57,25 @@ retries=1
 ```bash
 python -c "print(len(open('airflow/dags/ml_research_loop.py').readlines()), 'lines')"
 ```
-4개 함수(`_run_experiment`, `_evaluate_store`, `_generate_report`, `_update_wiki`)를 찾아본다.
+4단계의 함수(`_prepare_data`, `_run_experiment`, `_evaluate_store`, `_generate_report`,
+`_update_wiki`)를 찾아본다.
 
 ### 2단계: 등록 태스크별로 이뤄지는 구조 확인
 ```bash
 python - <<'PY'
-from tasks_registry import list_tasks
+from research.tasks_registry import list_tasks
 print("DAG 안에 생성될 태스크:", list_tasks())
 PY
 ```
-(research 폴더 추가 필요하면 `PYTHONPATH=. python ...`)
+- `research`를 패키지(`research.xxx`)로 import한다. 프로젝트 루트에서 바로 실행하면 된다.
 
 ### 3단계: 스케줄 확인
 ```bash
-airflow dags show ml_research_loop
+AIRFLOW_HOME=$(pwd)/airflow airflow dags show ml_research_loop
 ```
 각 task와 의존성(`>>`)이 그래프로 출력된다.
+> `AIRFLOW_HOME`을 프로젝트의 `airflow/`로 꼭 지정해야 한다. 지정하지 않으면
+> 기본 위치(`~/airflow`)를 봐서 DAG를 못 찾는다.
 
 ### 4단계: 특정 태스크만 실행 방법 확인 (D3에서 실행)
 아래를 이해만 하고 D3에서 실행한다:

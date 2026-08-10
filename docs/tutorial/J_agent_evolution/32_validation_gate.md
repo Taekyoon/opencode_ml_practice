@@ -178,6 +178,29 @@ PY
 
 names 끝에 `_check_imbalance_alert`가 보이고 `imbalance_alert` 체크가 warning으로 합류하면 성공이다.
 
+### 5단계: 정리 — 실습으로 추가한 규칙 되돌리기
+
+`src/validation_gate.py`는 **코어 고정 모듈**(AGENTS.md §2)이라 실습이 끝나면
+원래 상태로 되돌린다. 커밋 시점 원본으로 복원:
+
+```bash
+git restore src/validation_gate.py
+```
+
+복원 확인:
+
+```bash
+python - <<'PY'
+import sys; sys.path.insert(0, '.')
+from src.validation_gate import RULES
+print("현재 규칙:", [r.__name__ for r in RULES])
+PY
+```
+
+`_check_imbalance_alert`가 사라지고 기존 4개 규칙만 남으면 성공이다.
+> `git restore`는 마지막 커밋 상태로 되돌린다. 실습 사이에 이 파일을 의도적으로
+> 수정해 저장했다면 취소되므로, 원래 커밋에 없던 변경이 없을 때만 실행한다.
+
 ## 이해 확인
 
 1. train_f1과 f1의 갭이 크다는 것은 무슨 의미인가?

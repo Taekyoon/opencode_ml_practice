@@ -70,5 +70,7 @@ scripts/new_task.py 의 --help 를 보고, 지금 선택한 자유 과제에 맞
 ```
 
 ## 다음 레슨
-모듈 I 완료 — 이 프로젝트의 다른 모듈([C. 실험 runner](../C_research_framework/11_experiment_runner.md),
-[G. 가드레일](../G_ai_safety/22_prompt_guards.md))로 이어서 학습할 수 있다.
+모듈 I 완료 — 이 프로젝트의 다른 심화를 이어서 학습할 수 있다:
+- [G. 가드레일](../G_ai_safety/22_prompt_guards.md) (LLM 안전)
+- [J. 에이전트 발전 심화](../J_agent_evolution/31_execution_events.md) (이벤트 기록·검증 게이트)
+- 수료 관문은 [F1](../F_capstone/21_your_own_task.md) 이미 통과했는지 확인한다.

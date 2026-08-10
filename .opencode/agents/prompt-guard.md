@@ -3,7 +3,7 @@ name: prompt-guard
 description: >
   LLM 프롬프트 가드레일 에이전트. 사용자/에이전트 프롬프트의 안전성을 판별하고
   공격(인젝션·제약해제·시스템 프롬프트 탈취·조작)을 탐지한다. 학습된
-  research/prompt_guard 모델(predict.py)을 사용하며, 오탐/오탐 분석과
+  research/prompt_guard 모델(predict.py)을 사용하며, 오탐/미탐 분석과
   임계값 튜닝도 돕는다.
 tools:
   - read
@@ -52,7 +52,7 @@ from research.prompt_guard.predict import is_unsafe
 print(is_unsafe("프롬프트", threshold=0.5))
 PY
 ```
-- threshold 를 낮추면 공격을 더 잘 잡지만(오탐 감소) 정상 요청을 차단(오탐 증가)
+- threshold 를 낮추면 공격을 더 잘 잡지만(미탐 감소) 정상 요청을 차단(오탐 증가)
 - threshold 를 높이면 정상 사용자는 편하지만 위장 공격이 통과할 수 있음
 - 이 트레이드오프를 수치로 보여주고 사용자에게 기준을 선택하게 한다
 
@@ -69,6 +69,6 @@ PY
 
 - `FileNotFoundError: 가드레일 모델이 없습니다` → `experiment_runner.py` 먼저 실행
 - 한국어 어절 토큰화 특성상 "제한이 없는"과 "제한 없는"을 다른 단어로 본다.
-  이런 단어 변형(표면형)이 오탐/오탐의 원인이므로 리포트에 함께 적는다.
+  이런 단어 변형(표면형)이 오탐/미탐의 원인이므로 리포트에 함께 적는다.
 - 오탐(정상 요청을 공격으로 차단)이 많으면 threshold 를 올리는 것보다
   데이터 보강/모델 교체(ml-researcher)를 먼저 제안한다.

@@ -65,7 +65,7 @@ def is_unsafe(text: str, threshold: float = 0.5, model_path: str = None) -> str:
     """이진 판단: 안전한 요청이 아니면 공격/위험 상황으로 판단한다.
 
     threshold 는 'safe' 클래스 확률의 컷오프다. 튜토리얼 G2 에서 이 값을
-    낮/높일 때 오탐/오탐이 어떻게 바뀌는지 실습한다.
+    낮/높일 때 오탐/미탐이 어떻게 바뀌는지 실습한다.
     """
     label, probs = predict_prompt(text, model_path=model_path)
     if label == "safe":

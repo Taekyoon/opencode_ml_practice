@@ -51,7 +51,7 @@ X에 파생변수(예: temperature * pressure)를 추가하고 실행해줘.
 
 ### 4단계: DAG에 태스크 포함 확인
 ```bash
-airflow dags show ml_research_loop    # my_stress_task_* 4개 task 표시
+AIRFLOW_HOME=$(pwd)/airflow airflow dags show ml_research_loop    # my_stress_task_* 4개 task 표시
 ```
 스케줄러가 tasks_registry를 재파싱하면 자동 반영된다.
 
@@ -88,8 +88,10 @@ make wiki-lint
 DAG가 돌고, 위키에 기록되고, 내일 열어보면 리포트가 있다.
 **이 프로젝트는 여러분의 것이 된다.**
 
-튜토리얼을 수료했다면 이제 선택 심화 모듈 **G. AI 가드레일**이 기다린다.
-LLM 서비스에 안전장치(가드레일)를 붙이는 법을 배워보자.
+튜토리얼을 수료했다면 이제 선택 심화 모듈이 기다린다:
+- **G. AI 가드레일** — LLM 서비스에 안전장치(가드레일)를 붙이는 법
+- **I. 이미지 AI** — 웨이퍼맵 이미지 분류·이상탐지
+- **J. 에이전트 발전 심화** — 실행 이벤트·검증 게이트·제안→검증→적용 루프 (가장 높은 심화)
 
 ## 마무리 확인 문제
 
@@ -112,5 +114,8 @@ LLM 서비스에 안전장치(가드레일)를 붙이는 법을 배워보자.
 - [모듈 C](../C_research_framework/11_experiment_runner.md)
 - [모듈 D](../D_infrastructure/15_airflow_basics.md)
 - [모듈 E](../E_ai_automation/18_opencode_agents.md)
+- [모듈 F (수료)](21_your_own_task.md)
 - [모듈 G (선택 심화)](../G_ai_safety/22_prompt_guards.md)
+- [모듈 I (선택 심화)](../I_image_ai/28_anomaly_detection.md)
+- [모듈 J (선택 심화)](../J_agent_evolution/31_execution_events.md)
 - [처음으로](../README.md)

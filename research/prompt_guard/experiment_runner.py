@@ -178,7 +178,7 @@ def run_experiment(config: dict = None) -> dict:
     for name, p, r, f in zip(le.classes_, p_arr, r_arr, f_arr):
         per_class[str(name)] = {"precision": round(float(p), 4), "recall": round(float(r), 4), "f1": round(float(f), 4)}
 
-    # 6. 하드 케이스 평가 (흔히 오탐/오탐하는 경계 사례)
+    # 6. 하드 케이스 평가 (흔히 오탐/미탐하는 경계 사례)
     hard_eval = None
     if config.get("eval_hard", True):
         from src.generate_prompt_data import generate_hard_prompts

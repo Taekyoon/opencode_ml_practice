@@ -19,7 +19,7 @@ seed:
 ## DAG 파싱 실패 여부 확인
 dags:
 	$(AIRFLOW_HOME_CMD) airflow dags list-import-errors
-	$(AIRFLOW_HOME_CMD) airflow dags list | grep semiconductor
+	$(AIRFLOW_HOME_CMD) airflow dags list | grep -E "ml_research_loop|semiconductor"
 
 ## 스케줄러 백그라운드 시작
 scheduler:
@@ -58,6 +58,8 @@ research-local:
 
 ## 새 연구 태스크 생성 (스캐폴드)
 ##   make new-task TASK=maintenance_cost DATASET=lab_sensor_data TARGET=failure NOTE="설명"
+##   (기 등록 dataset이 없으면 inbox 등록: cp data/synthetic_data.csv research/inbox/ 후
+##    python scripts/new_task.py TASK --inbox synthetic_data.csv --target failure)
 new-task:
 	python scripts/new_task.py $(TASK) --dataset $(DATASET) --target $(TARGET) --note "$(NOTE)"
 

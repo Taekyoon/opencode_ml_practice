@@ -15,13 +15,16 @@
 여러 설정을 시도하다 보면 **어떤 조합이 최고였는지**를 곧바로 알 수 없게 된다.
 `research.db`(SQLite 파일)가 이 불확실함을 해소한다.
 
-### 이 프로젝트의 실험 테이블 2개
+### 이 프로젝트의 실험 테이블
 `src/research_store.py` 스키마 참조:
 
 | 테이블 | 용도 | 특징 |
 |--------|------|------|
 | `experiments` | 모든 실험 실행 기록 | 설정(config_json)·지표(metrics_json)·score·run_id |
 | `best_run` | 태스크별 최고 기록 1줄 | task_id가 UNIQUE, 최고 score 갱신 |
+
+> 스키마에는 이 밖에 `events` 테이블이 있다. "실패한 실행까지 기록"하는 용도로
+> **모듈 J(J1)의 주제**이므로 지금은 넘어간다.
 
 **score**: 프로젝트의 표준 점수 (분류 = F1 × PR-AUC, 회귀 = R²)
 `record_experiment()`는 score가 태스크 최고면 `best_run`과 `is_best` 플래그를 갱신한다.
@@ -73,19 +76,24 @@ PY
 > 결과의 재현(reproducibility)이 가능하고, 설정과 상관없는 "이 코드가 왕"이라는 의심이 사라진다.
 
 ### 5단계: score가 개선될 때 자동 best 갱신해보기
-`_re_record_experiment` 내부 로직에 대해 opencode에게 물어보고,
-직접 두 번 기록해보며(예: score를 다르게) `best_run` 변화를 확인한다:
+운영 DB(`research.db`)를 더럽히지 않도록 **임시 DB**로 두 번 기록해
+`best_run` 변화를 확인한다:
 ```bash
 python - <<'PY'
+import os
 from src.research_store import record_experiment, get_best_score
 
-record_experiment(run_id="demo_trial_1", config={"x": 1}, metrics={"f1": 0.5, "pr_auc": 0.6}, score=0.30)
-print("best:", get_best_score("failure_prediction"))
-record_experiment(run_id="demo_trial_2", config={"x": 2}, metrics={"f1": 0.8, "pr_auc": 0.9}, score=0.72)
-print("best 갱신:", get_best_score("failure_prediction"))
+db = "research/tmp_b4_demo.db"
+record_experiment(run_id="demo_trial_1", config={"x": 1}, metrics={"f1": 0.5, "pr_auc": 0.6}, score=0.30, db_path=db)
+print("best:", get_best_score("failure_prediction", db_path=db))
+record_experiment(run_id="demo_trial_2", config={"x": 2}, metrics={"f1": 0.8, "pr_auc": 0.9}, score=0.72, db_path=db)
+print("최고 기록 갱신:", get_best_score("failure_prediction", db_path=db))
+os.remove(db)   # 임시 DB 삭제 (운영 DB와 분리)
 PY
 ```
-두 번째 기록의 score가 더 크면 `best_run`이 갱신된다.
+`record_experiment()`는 score가 태스크 최고이면 내부적으로 `is_best` 플래그와
+`best_run`을 갱신한다 (별도 함수 호출 불필요). 두 번째 기록(0.72 > 0.30)으로 갱신이
+일어난 것을 확인한다.
 
 ## 이해 확인
 

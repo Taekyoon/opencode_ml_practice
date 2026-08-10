@@ -79,7 +79,7 @@
 | 레슨 | 제목 | 배우는 것 | 시간 |
 |------|------|----------|------|
 | [G1](G_ai_safety/22_prompt_guards.md) | 프롬프트 공격 이해 | 인젝션·탈취·조작 등 위협 | 15분 |
-| [G2](G_ai_safety/23_building_guardrail.md) | 가드레일 성능 | 오탐/오탐, threshold 튜닝 | 25분 |
+| [G2](G_ai_safety/23_building_guardrail.md) | 가드레일 성능 | 오탐/미탐, threshold 튜닝 | 25분 |
 | [G3](G_ai_safety/24_agent_integration.md) | 가드레일 에이전트 | predict.py, prompt-guard | 15분 |
 | [G4](G_ai_safety/25_own_guardrail.md) | 나만의 가드레일 | 자유 확장 & 마무리 | 20분 |
 
