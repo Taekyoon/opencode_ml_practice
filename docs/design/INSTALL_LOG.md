@@ -112,7 +112,7 @@ mkdir /tmp/shepherd-qs && cd /tmp/shepherd-qs
 |------|-----------|----------|------|
 | 개념 | 리소스 등록 sub-agent 프론트매터 | **단일 skill `.md` 롤아웃 학습** | ❌ |
 | 포맷 | `name/description/tools` (여러 도구, mode) | `skill_content:` 문자열 + EnvAdapter | ❌ |
-| 하네스 | opencode | claude/codex/copilot 등 — **opencode 없음** | ❌ |
+| 하네스 | opencode | claude(codex/codex_exec)/qwen/minimax 등 — **opencode 없음** | ❌ |
 
 **결론**: `.opencode/agents/*.md`는 오퍼레이터 프로비저닝 문서. SkillOpt는 "벤치마크 문제 → skill 문자열 최적화". 직접 1:1 맵핑 불가. 단, skill이 pure-.md라면 기존 agent 본문을 재사용한 "시드 스킬 수동 작성"은 가능.
 

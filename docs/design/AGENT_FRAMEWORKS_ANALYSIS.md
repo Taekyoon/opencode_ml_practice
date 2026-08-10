@@ -85,6 +85,7 @@
 ## 5. 관련 문서
 
 - 실증 데이터: `docs/design/INSTALL_LOG.md` (설치·CLI·판정 실측)
+- 개념 관점 정리: `docs/design/ENGINEERING_CONCEPTS.md` (하네스/루프/그래프 공학)
 - 튜토리얼: `docs/tutorial/J_agent_evolution/31_execution_events.md` (J1),
   `32_validation_gate.md` (J2), `33_propose_validate_apply.md` (J3)
 - 구현: `src/research_store.py` (events API), `src/validation_gate.py` (GateCheck/GateResult),

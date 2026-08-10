@@ -44,7 +44,7 @@ DAG가 실행하고, 결과가 DB/위키에 남고, 에이전트가 다시 보�
 ```
 @ml-researcher
 가설 : failure_prediction 태스크에서 모델을 gradient_boosting 으로 바꾸면
-score(F1 × PR-AUC)가 로지스틱보다 높아질 것 같아."
+score(F1 × PR-AUC)가 로지스틱보다 높아질 것 같아.
 실행해서 비교해줘.
 ```
 에이전트는 `experiment_runner.py`의 `get_config()`를 바꾸고 DAG를 트리거하고
@@ -65,8 +65,8 @@ cat research/wiki/tasks/failure_prediction.md   # 위키에 자동 기록
 ## 이해 확인
 
 1. 자율 연구 루프에서 "실제 ML 학습"은 어느 파일이 수행하나?
-2. DAG의 4단계 화면(D2)이 이 루프에 어떻게 맞아 떨어지는가
-3. 가설이 좋은도/나쁘든 왜 DB+위키 양쪽에 기록되는가?
+2. DAG의 4단계 흐름(D2)이 이 루프에 어떻게 맞아 떨어지는가?
+3. 가설이 좋든 나쁘든 왜 DB+위키 양쪽에 기록되는가?
 
 ## opencode에게 물어보세요
 ```
